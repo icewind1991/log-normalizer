@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize)]
-pub enum Team {
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
+pub enum TeamId {
     Blue,
     Red,
 }
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
 pub enum Class {
     Scout,
     Soldier,
@@ -19,7 +19,7 @@ pub enum Class {
     Spy,
 }
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
 pub enum GameMode {
     UltiDuo,
     Fours,
@@ -29,7 +29,7 @@ pub enum GameMode {
     Other,
 }
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
 pub enum EventType {
     Charge,
     PointCap,
@@ -37,13 +37,13 @@ pub enum EventType {
     RoundWin,
 }
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Medigun {
     Medigun,
     KritzKrieg,
     QuickFix,
-    Vacinator
+    Vacinator,
 }
 
 impl Default for Medigun {
@@ -52,7 +52,7 @@ impl Default for Medigun {
     }
 }
 
-#[derive(Debug, Clone, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]
 // #[sqlx(rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Weapon {

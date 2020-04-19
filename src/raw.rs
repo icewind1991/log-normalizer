@@ -1,8 +1,8 @@
+use crate::data::{Class, Medigun, TeamId, Weapon};
+use serde::export::TryFrom;
+use serde::Deserialize;
 use std::collections::HashMap;
 use steamid_ng::SteamID;
-use crate::data::{Medigun, Class, Weapon, Team as TeamId};
-use serde::Deserialize;
-use serde::export::TryFrom;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct RawLog {
@@ -14,10 +14,14 @@ pub struct RawLog {
     pub players: HashMap<SteamID, Player>,
     pub names: HashMap<SteamID, String>,
     pub rounds: Option<Vec<Round>>,
-    pub healspread: HashMap<SteamID, HashMap<SteamID, u32>>,
-    pub classkills: HashMap<SteamID, ClassNumbers>,
-    pub classdeaths: HashMap<SteamID, ClassNumbers>,
-    pub classkillassists: Option<HashMap<SteamID, ClassNumbers>>,
+    #[serde(rename = "healspread")]
+    pub heal_spread: HashMap<SteamID, HashMap<SteamID, u32>>,
+    #[serde(rename = "classkills")]
+    pub class_kills: HashMap<SteamID, ClassNumbers>,
+    #[serde(rename = "classdeaths")]
+    pub class_deaths: HashMap<SteamID, ClassNumbers>,
+    #[serde(rename = "classkillassists")]
+    pub class_kill_assists: Option<HashMap<SteamID, ClassNumbers>>,
     pub chat: Vec<ChatMessage>,
     pub info: Info,
 }
@@ -31,10 +35,12 @@ pub struct Teams {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Team {
-    pub score: u32,
+    pub score: u8,
+    #[serde(default)]
     pub kills: u32,
     #[serde(default)]
     pub deaths: u32,
+    #[serde(default)]
     pub dmg: u32,
     #[serde(default)]
     pub charges: u32,
@@ -123,6 +129,8 @@ pub struct Round {
     pub first_cap: Option<TeamId>,
     pub length: u32,
     pub team: Option<Teams>,
+    #[serde(flatten)]
+    pub flat_team: Option<Teams>,
     pub players: HashMap<SteamID, RoundPlayer>,
     pub events: Vec<Event>,
 }
@@ -165,6 +173,18 @@ pub enum Event {
         steamid: SteamID,
         team: TeamId,
     },
+}
+
+impl Event {
+    pub fn time(&self) -> u32 {
+        match self {
+            Event::RoundWin { time, .. } => *time,
+            Event::Charge { time, .. } => *time,
+            Event::Drop { time, .. } => *time,
+            Event::MedicDeath { time, .. } => *time,
+            Event::PointCap { time, .. } => *time,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -250,24 +270,15 @@ pub struct Info {
     pub has_hr: bool,
     #[serde(default)]
     pub has_intel: bool,
+    #[serde(default)]
+    #[serde(rename = "AD_scoring")]
+    pub ad_scoring: bool,
     pub title: String,
     pub date: u64,
     pub uploader: Uploader,
     pub rounds: Option<Vec<Round>>,
     #[serde(flatten)]
-    pub teams: Option<InfoTeams>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct InfoTeams {
-    pub red: InfoTeam,
-    pub blue: InfoTeam,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct InfoTeam {
-    pub score: u32
+    pub teams: Option<Teams>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -279,16 +290,22 @@ pub struct Uploader {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::fs;
     use test_case::test_case;
-    use super::*;
 
     #[test_case("1.json")]
+    #[test_case("134389.json")]
     #[test_case("550237.json")]
+    #[test_case("2522305.json")]
     fn test_parse(file: &str) {
         let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
         let parsed: RawLog = serde_json::from_str(&content).unwrap();
         assert!(parsed.teams.is_some() || parsed.info.teams.is_some());
         assert!(parsed.rounds.is_some() || parsed.info.rounds.is_some());
+
+        for round in parsed.rounds.or(parsed.info.rounds).unwrap() {
+            assert!(round.flat_team.is_some() || round.team.is_some());
+        }
     }
 }
