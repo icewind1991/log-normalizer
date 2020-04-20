@@ -92,7 +92,7 @@ impl From<RawLog> for NormalizedLog {
             .into_iter()
             .map(|raw| Round::from(raw))
             .collect();
-        let teams = raw.teams.or(raw.info.teams).unwrap();
+        let teams = raw.teams.or(raw.info.teams).unwrap_or_default();
 
         let mut normalized = NormalizedLog {
             version: raw.version,
@@ -127,8 +127,8 @@ impl From<crate::raw::Round> for Round {
                     _ => None,
                 })
             })
-            .unwrap();
-        let team = raw.team.or(raw.flat_team).unwrap();
+            .unwrap_or(TeamId::Blue);
+        let team = raw.team.or(raw.flat_team).unwrap_or_default();
 
         Round {
             start_time: raw.start_time,
@@ -191,7 +191,9 @@ fn normalize_stopwatch_events(log: &mut NormalizedLog) {
                 team: TeamId::Blue,
                 point: first_half_rounds,
             });
-            log.rounds[1].events.push(last_event.unwrap());
+            if let Some(last_event) = last_event {
+                log.rounds[1].events.push(last_event);
+            }
         }
     }
 }

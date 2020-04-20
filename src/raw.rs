@@ -26,14 +26,14 @@ pub struct RawLog {
     pub info: Info,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct Teams {
     pub red: Team,
     pub blue: Team,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct Team {
     pub score: u8,
     #[serde(default)]
