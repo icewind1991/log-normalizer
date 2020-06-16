@@ -274,6 +274,7 @@ CREATE INDEX rounds_first_cap_idx
 CREATE TABLE events_charge (
     id              SERIAL                      PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
+    medigun         medigun                     NOT NULL,
     time            INTEGER                     NOT NULL,
     team            team                        NOT NULL,
     steam_id        BIGINT                      NOT NULL
@@ -331,7 +332,7 @@ CREATE TABLE players (
     damage_taken    INTEGER                     NOT NULL,
     ubers           INTEGER                     NOT NULL,
     medigun_ubers   INTEGER                     NOT NULL,
-    kritzkrieg_ubers INTEGER                     NOT NULL,
+    kritzkrieg_ubers INTEGER                    NOT NULL,
     quickfix_ubers  INTEGER                     NOT NULL,
     vacinator_ubers INTEGER                     NOT NULL,
     drops           INTEGER                     NOT NULL,
