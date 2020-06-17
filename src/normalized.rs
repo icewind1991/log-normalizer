@@ -94,7 +94,7 @@ impl Info {
 #[derive(Debug, Clone)]
 pub struct Round {
     pub start_time: u64,
-    pub winner: TeamId,
+    pub winner: Option<TeamId>,
     pub first_cap: TeamId,
     pub length: u32,
     pub team: Teams,
@@ -218,7 +218,7 @@ pub fn map_is_stopwatch(map: &str) -> bool {
 fn normalize_stopwatch_events(log: &mut NormalizedLog) {
     if map_is_stopwatch(&log.info.map)
         && log.rounds.len() >= 2
-        && log.rounds[1].winner == TeamId::Blue
+        && log.rounds[1].winner == Some(TeamId::Blue)
     {
         let first_half_rounds = get_round_point_capped(&log.rounds[0]);
         let second_half_rounds = get_round_point_capped(&log.rounds[1]);
@@ -284,6 +284,7 @@ fn normalize_event_times(log: &mut NormalizedLog) {
                 Event::Drop { time, .. } => *time += prev_round_end_time,
                 Event::MedicDeath { time, .. } => *time += prev_round_end_time,
                 Event::RoundWin { time, .. } => *time += prev_round_end_time,
+                Event::Other => {}
             });
         }
         prev_round_end_time = get_round_end_time(round);
@@ -317,8 +318,8 @@ fn normalize_stopwatch_score(log: &mut NormalizedLog) {
             log.teams.red.score = 1;
         } else {
             let first_half_cap_time = get_last_cap_time(&log.rounds[0]);
-            let second_half_cap_time =
-                get_last_cap_time(&log.rounds[1]) - get_round_end_time(&log.rounds[0]);
+            let second_half_cap_time = get_last_cap_time(&log.rounds[1])
+                .saturating_sub(get_round_end_time(&log.rounds[0]));
 
             if first_half_cap_time < second_half_cap_time {
                 log.teams.blue.score = 1;

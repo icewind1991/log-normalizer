@@ -35,7 +35,7 @@ pub struct Teams {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Team {
-    pub score: u8,
+    pub score: u32,
     #[serde(default)]
     pub kills: u32,
     #[serde(default)]
@@ -73,29 +73,29 @@ pub struct Player {
     pub hr: u16,
     #[serde(default)]
     pub lks: u16,
-    pub ubers: u8,
+    pub ubers: u32,
     #[serde(default)]
-    pub ubertypes: HashMap<Medigun, u8>,
-    pub drops: u8,
-    pub medkits: u8,
+    pub ubertypes: HashMap<Medigun, u32>,
+    pub drops: u32,
+    pub medkits: u32,
     #[serde(default)]
     pub medkits_hp: u16,
-    pub backstabs: u8,
-    pub headshots: u8,
+    pub backstabs: u32,
+    pub headshots: u32,
     #[serde(default)]
-    pub headshots_hit: u8,
+    pub headshots_hit: u32,
     pub heal: u32,
-    pub cpc: u8,
-    pub ic: u8,
+    pub cpc: u32,
+    pub ic: u32,
     pub medicstat: Option<MedicStats>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct MedicStats {
-    pub advantages_lost: u8,
+    pub advantages_lost: u32,
     pub biggest_advantage_list: u16,
-    pub deaths_within_20s_after_uber: u8,
-    pub deaths_with_95_99_uber: u8,
+    pub deaths_within_20s_after_uber: u32,
+    pub deaths_with_95_99_uber: u32,
     pub avg_time_before_healing: f32,
     pub avg_time_to_build: f32,
     pub avg_time_before_using: f32,
@@ -169,7 +169,7 @@ impl From<RawWeaponStats> for WeaponStat {
 pub struct Round {
     #[serde(default)]
     pub start_time: u64,
-    pub winner: TeamId,
+    pub winner: Option<TeamId>,
     #[serde(rename = "firstcap")]
     pub first_cap: Option<TeamId>,
     pub length: u32,
@@ -211,13 +211,15 @@ pub enum Event {
     },
     RoundWin {
         time: u32,
-        team: TeamId,
+        team: Option<TeamId>,
     },
     Drop {
         time: u32,
         steamid: SteamID,
         team: TeamId,
     },
+    #[serde(other)]
+    Other,
 }
 
 impl Event {
@@ -228,6 +230,7 @@ impl Event {
             Event::Drop { time, .. } => *time,
             Event::MedicDeath { time, .. } => *time,
             Event::PointCap { time, .. } => *time,
+            Event::Other => 0,
         }
     }
 }
@@ -235,23 +238,23 @@ impl Event {
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ClassNumbers {
     #[serde(default)]
-    pub scout: u8,
+    pub scout: u32,
     #[serde(default)]
-    pub soldier: u8,
+    pub soldier: u32,
     #[serde(default)]
-    pub pyro: u8,
+    pub pyro: u32,
     #[serde(default)]
-    pub demoman: u8,
+    pub demoman: u32,
     #[serde(default)]
-    pub heavyweapons: u8,
+    pub heavyweapons: u32,
     #[serde(default)]
-    pub engineer: u8,
+    pub engineer: u32,
     #[serde(default)]
-    pub medic: u8,
+    pub medic: u32,
     #[serde(default)]
-    pub sniper: u8,
+    pub sniper: u32,
     #[serde(default)]
-    pub spy: u8,
+    pub spy: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -6,6 +6,14 @@ use serde::Deserialize;
 pub enum TeamId {
     Blue,
     Red,
+    #[serde(other)]
+    Other,
+}
+
+impl Default for TeamId {
+    fn default() -> Self {
+        TeamId::Other
+    }
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
@@ -22,6 +30,8 @@ pub enum Class {
     Medic,
     Sniper,
     Spy,
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Eq, PartialEq)]
@@ -47,6 +57,8 @@ pub enum EventType {
     PointCap,
     MedicDeath,
     RoundWin,
+    #[serde(other)]
+    Other,
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]

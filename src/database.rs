@@ -6,11 +6,12 @@ use sqlx::PgPool;
 use std::collections::HashMap;
 use steamid_ng::SteamID;
 
-pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<(), sqlx::Error> {
+pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
     sqlx::query!(
         "INSERT INTO logs(id, red_score, blue_score, length, game_mode, map, type, date)\
             VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
-        id as i32,
+        id,
         log.teams.red.score as i32,
         log.teams.blue.score as i32,
         log.info.total_length as i32,
@@ -19,7 +20,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
         log.info.map_type() as MapType,
         log.info.date() as DateTime<Utc>
     )
-    .execute(pool)
+    .execute(&mut tx)
     .await?;
 
     for (num, round) in log.rounds.iter().enumerate() {
@@ -31,9 +32,9 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING id"#,
             num as i32,
-            id as i32,
+            id,
             round.length as i32,
-            round.winner as TeamId,
+            round.winner.unwrap_or_default() as TeamId,
             round.first_cap as TeamId,
             round.team.red.score as i32,
             round.team.blue.score as i32,
@@ -44,7 +45,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
             round.team.red.charges as i32,
             round.team.blue.charges as i32,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut tx)
         .await?
         .id;
 
@@ -59,7 +60,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                         *team as TeamId,
                         *point as i32,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
                 }
                 Event::RoundWin { time, team } => {
@@ -68,9 +69,9 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                             VALUES($1, $2, $3)",
                         round_id,
                         *time as i32,
-                        *team as TeamId,
+                        team.unwrap_or_default() as TeamId,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
                 }
                 Event::MedicDeath {
@@ -88,7 +89,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                         u64::from(*steamid) as i64,
                         u64::from(*killer) as i64,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
                 }
                 Event::Drop {
@@ -104,7 +105,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                         *team as TeamId,
                         u64::from(*steamid) as i64,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
                 }
                 Event::Charge {
@@ -122,9 +123,10 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                         *medigun as Medigun,
                         u64::from(*steamid) as i64,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
                 }
+                _ => {}
             }
         }
     }
@@ -204,7 +206,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
             kills.sniper as i32,
             kills.spy as i32
         )
-        .fetch_one(pool)
+        .fetch_one(&mut tx)
         .await?
         .id;
 
@@ -221,7 +223,7 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                 class.assists as i32,
                 class.dmg as i32,
             )
-            .fetch_one(pool)
+            .fetch_one(&mut tx)
             .await?
             .id;
 
@@ -236,11 +238,13 @@ pub async fn store_log(pool: &PgPool, id: u32, log: &NormalizedLog) -> Result<()
                         stats.hits as i32,
                         stats.dmg as i32,
                     )
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await?;
             }
         }
     }
+
+    tx.commit().await?;
 
     Ok(())
 }
