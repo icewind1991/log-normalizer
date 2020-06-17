@@ -1,4 +1,4 @@
-use crate::data::{Class, Medigun, TeamId, Weapon};
+use crate::data::{Class, Medigun, TeamId};
 use serde::export::TryFrom;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -54,6 +54,7 @@ pub struct Team {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Player {
+    pub class_stats: Vec<ClassStat>,
     pub team: TeamId,
     pub kills: u16,
     pub deaths: u16,
@@ -106,18 +107,62 @@ pub struct ClassStat {
     #[serde(rename = "type")]
     pub class: Class,
     pub kills: u16,
+    pub assists: u16,
+    pub deaths: u16,
     pub dmg: u32,
     pub total_time: u32,
-    pub weapon: HashMap<Weapon, WeaponStat>,
+    #[serde(default)]
+    pub weapon: HashMap<String, WeaponStat>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum RawWeaponStats {
+    Kills(u32),
+    Stats {
+        kills: u32,
+        dmg: u32,
+        avg_dmg: f32,
+        shots: u32,
+        hits: u32,
+    },
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(from = "RawWeaponStats")]
 pub struct WeaponStat {
     pub kills: u32,
     pub dmg: u32,
-    pub avg_dmg: u32,
+    pub avg_dmg: f32,
     pub shots: u32,
     pub hits: u32,
+}
+
+impl From<RawWeaponStats> for WeaponStat {
+    fn from(raw: RawWeaponStats) -> Self {
+        match raw {
+            RawWeaponStats::Kills(kills) => WeaponStat {
+                kills,
+                dmg: 0,
+                avg_dmg: 0.0,
+                shots: 0,
+                hits: 0,
+            },
+            RawWeaponStats::Stats {
+                kills,
+                dmg,
+                avg_dmg,
+                shots,
+                hits,
+            } => WeaponStat {
+                kills,
+                dmg,
+                avg_dmg,
+                shots,
+                hits,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -187,7 +232,7 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct ClassNumbers {
     #[serde(default)]
     pub scout: u8,

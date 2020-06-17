@@ -1,8 +1,10 @@
 pub use crate::data::TeamId;
+use crate::data::{GameMode, MapType};
 use crate::raw::RawLog;
 pub use crate::raw::{
     ChatMessage, ClassNumbers, Event, Player, RoundPlayer, Team, Teams, Uploader,
 };
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use std::collections::HashMap;
 use steamid_ng::SteamID;
@@ -22,6 +24,22 @@ pub struct NormalizedLog {
     pub class_kill_assists: HashMap<SteamID, ClassNumbers>,
     pub chat: Vec<ChatMessage>,
     pub info: Info,
+}
+
+impl NormalizedLog {
+    pub fn game_mode(&self) -> GameMode {
+        if self.info.map_type() == MapType::UltiDuo {
+            return GameMode::UltiDuo;
+        }
+
+        match self.players.len() {
+            7..=9 => GameMode::Fours,
+            11..=13 => GameMode::Sixes,
+            14 => GameMode::Sevens,
+            17..=19 => GameMode::Highlander,
+            _ => GameMode::Other,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -47,6 +65,30 @@ pub struct Info {
     pub title: String,
     pub date: u64,
     pub uploader: Uploader,
+}
+
+impl Info {
+    pub fn map_type(&self) -> MapType {
+        if map_is_stopwatch(&self.map) {
+            MapType::Stopwatch
+        } else if self.map.starts_with("cp") {
+            MapType::Cp
+        } else if self.map.starts_with("koth") {
+            MapType::KOTH
+        } else if self.map.starts_with("ctf") {
+            MapType::CTF
+        } else if self.map.starts_with("ultiduo") {
+            MapType::UltiDuo
+        } else if self.map.starts_with("bball") {
+            MapType::BBall
+        } else {
+            MapType::Other
+        }
+    }
+
+    pub fn date(&self) -> DateTime<Utc> {
+        DateTime::from_utc(NaiveDateTime::from_timestamp(self.date as i64, 0), Utc)
+    }
 }
 
 #[derive(Debug, Clone)]
