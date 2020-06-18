@@ -121,7 +121,7 @@ pub enum RawWeaponStats {
     Kills(u32),
     Stats {
         kills: u32,
-        dmg: u32,
+        dmg: i32,
         #[serde(default)]
         avg_dmg: f32,
         shots: u32,
@@ -133,7 +133,7 @@ pub enum RawWeaponStats {
 #[serde(from = "RawWeaponStats")]
 pub struct WeaponStat {
     pub kills: u32,
-    pub dmg: u32,
+    pub dmg: i32,
     pub avg_dmg: f32,
     pub shots: u32,
     pub hits: u32,
