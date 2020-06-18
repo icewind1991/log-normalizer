@@ -152,6 +152,7 @@ impl From<RawLog> for NormalizedLog {
         };
 
         normalize_stopwatch_events(&mut normalized);
+        filter_double_wins(&mut normalized);
         normalize_event_times(&mut normalized);
         normalize_stopwatch_score(&mut normalized);
 
@@ -236,6 +237,20 @@ fn normalize_stopwatch_events(log: &mut NormalizedLog) {
             if let Some(last_event) = last_event {
                 log.rounds[1].events.push(last_event);
             }
+        }
+    }
+}
+
+fn filter_double_wins(log: &mut NormalizedLog) {
+    for round in log.rounds.iter_mut() {
+        if let Some(index) = round
+            .events
+            .iter()
+            .enumerate()
+            .find(|(_index, event)| matches!(event, Event::RoundWin { .. }))
+            .map(|(index, _event)| index)
+        {
+            round.events.truncate(index + 1);
         }
     }
 }
@@ -338,11 +353,15 @@ mod tests {
     use std::fs;
     use test_case::test_case;
 
+    fn parse(file: &str) -> NormalizedLog {
+        let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
+        serde_json::from_str(&content).unwrap()
+    }
+
     #[test_case("134389.json", 0, 1)]
     #[test_case("550237.json", 1, 0)]
-    fn test_normalize_stopwatch_score(file: &str, blue: u8, red: u8) {
-        let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
-        let parsed: NormalizedLog = serde_json::from_str(&content).unwrap();
+    fn test_normalize_stopwatch_score(file: &str, blue: u32, red: u32) {
+        let parsed = parse(file);
 
         assert_eq!(parsed.teams.blue.score, blue);
         assert_eq!(parsed.teams.red.score, red);
@@ -353,14 +372,33 @@ mod tests {
     #[test_case("550237.json")]
     #[test_case("2522305.json")]
     fn test_normalize_event_time(file: &str) {
-        let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
-        let parsed: NormalizedLog = serde_json::from_str(&content).unwrap();
+        let parsed = parse(file);
 
         let mut last_event_time = 0;
 
         for event in parsed.rounds.iter().flat_map(|round| round.events.iter()) {
             assert!(event.time() >= last_event_time);
             last_event_time = event.time();
+        }
+    }
+
+    #[test_case("1.json")]
+    #[test_case("114840.json")]
+    #[test_case("134389.json")]
+    #[test_case("550237.json")]
+    #[test_case("2522305.json")]
+    fn test_round_win(file: &str) {
+        let parsed = parse(file);
+
+        for round in parsed.rounds {
+            assert_eq!(
+                1,
+                round
+                    .events
+                    .into_iter()
+                    .filter(|event| matches!(event, Event::RoundWin { .. }))
+                    .count()
+            );
         }
     }
 }
