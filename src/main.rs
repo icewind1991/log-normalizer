@@ -72,6 +72,9 @@ async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainEr
                 if formatted_err.starts_with("invalid value: integer ") {
                     return Ok(None);
                 }
+                if formatted_err.starts_with("invalid type: floating point") {
+                    return Ok(None);
+                }
                 Err(err.into())
             }
         }
