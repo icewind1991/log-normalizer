@@ -144,7 +144,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
     for (steam_id, player) in &log.players {
         if let Some(team) = player.team {
             let kills = log.class_kills.get(steam_id).cloned().unwrap_or_default();
-            let player_id: i32 = sqlx::query!(
+            let player_id: i64 = sqlx::query!(
                 "INSERT INTO players (\
                 log_id, steam_id, name, team, kills, deaths, assists,\
                 suicides, dmg, damage_taken, ubers, medigun_ubers,\
@@ -215,7 +215,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
 
             for class in &player.class_stats {
                 if class.class != Class::Unknown {
-                    let class_stat_id: i32 = sqlx::query!(
+                    let class_stat_id: i64 = sqlx::query!(
                     "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6, $7)\
                             RETURNING id",
@@ -235,7 +235,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                         sqlx::query!(
                         "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6)",
-                        class_stat_id as i32,
+                        class_stat_id,
                         *weapon,
                         stats.kills as i32,
                         stats.shots as i32,

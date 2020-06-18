@@ -59,7 +59,7 @@ CREATE INDEX rounds_first_cap_idx
     ON rounds USING BTREE (first_cap);
 
 CREATE TABLE events_charge (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
     medigun         medigun                     NOT NULL,
     time            INTEGER                     NOT NULL,
@@ -74,7 +74,7 @@ CREATE INDEX events_charge_steam_id_idx
     ON events_charge USING BTREE (steam_id);
 
 CREATE TABLE events_point_cap (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
     time            INTEGER                     NOT NULL,
     team            team                        NOT NULL,
@@ -85,7 +85,7 @@ CREATE INDEX events_point_cap_round_id_idx
     ON events_point_cap USING BTREE (round_id);
 
 CREATE TABLE events_medic_death (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
     time            INTEGER                     NOT NULL,
     team            team                        NOT NULL,
@@ -100,7 +100,7 @@ CREATE INDEX events_medic_death_steam_id_idx
     ON events_medic_death USING BTREE (steam_id);
 
 CREATE TABLE events_drop (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
     time            INTEGER                     NOT NULL,
     team            team                        NOT NULL,
@@ -114,7 +114,7 @@ CREATE INDEX events_drop_steam_id_idx
     ON events_drop USING BTREE (steam_id);
 
 CREATE TABLE events_round_win (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     round_id        INTEGER                     NOT NULL REFERENCES rounds(id),
     time            INTEGER                     NOT NULL,
     team            team                        NOT NULL
@@ -124,7 +124,7 @@ CREATE UNIQUE INDEX events_round_win_round_id_idx
     ON events_round_win USING BTREE (round_id);
 
 CREATE TABLE players (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     log_id          INTEGER                     NOT NULL REFERENCES logs(id),
     steam_id        BIGINT                      NOT NULL,
     name            TEXT                        NOT NULL,
@@ -168,7 +168,7 @@ CREATE INDEX players_steam_id_idx
     ON players USING BTREE (steam_id);
 
 CREATE TABLE class_stats (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     player_id       INTEGER                     NOT NULL REFERENCES players(id),
     type            class_type                  NOT NULL,
     time            INTEGER                     NOT NULL,
@@ -185,7 +185,7 @@ CREATE UNIQUE INDEX class_stats_player_id_type_idx
     ON class_stats USING BTREE (player_id, type);
 
 CREATE TABLE player_weapon_stats (
-    id              SERIAL                      PRIMARY KEY,
+    id              BIGSERIAL                   PRIMARY KEY,
     class_stat_id   INTEGER                     NOT NULL REFERENCES class_stats(id),
     weapon          TEXT                        NOT NULL,
     kills           INTEGER                     NOT NULL,
