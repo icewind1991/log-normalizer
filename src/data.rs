@@ -65,10 +65,11 @@ pub enum EventType {
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum Medigun {
-    Medigun,
     KritzKrieg,
     QuickFix,
     Vacinator,
+    #[serde(other)]
+    Medigun,
 }
 
 impl Default for Medigun {

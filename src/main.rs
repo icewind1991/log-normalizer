@@ -58,7 +58,7 @@ async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainEr
             .await?;
 
     if is_valid(&row.0) {
-        Ok(serde_json::from_value(row.0).ok())
+        Ok(serde_json::from_value(row.0)?)
     } else {
         Ok(None)
     }
