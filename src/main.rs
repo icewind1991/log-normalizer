@@ -58,7 +58,15 @@ async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainEr
             .await?;
 
     if is_valid(&row.0) {
-        Ok(serde_json::from_value(row.0)?)
+        match serde_json::from_value(row.0) {
+            Ok(log) => Ok(Some(log)),
+            Err(err) => {
+                if format!("{}", err).starts_with("Invalid SteamID") {
+                    return Ok(None);
+                }
+                Err(err.into())
+            }
+        }
     } else {
         Ok(None)
     }
