@@ -23,7 +23,7 @@ async fn main() -> Result<(), MainError> {
     let from = get_max_stored_log(&pool).await?;
 
     for id in (from + 1)..=max {
-        println!("{}", id);
+        print!("{} ", id);
         if let Some(log) = get_log(&raw_pool, id).await? {
             println!("{}", log.info.map);
             store_log(&pool, id, &log).await?;

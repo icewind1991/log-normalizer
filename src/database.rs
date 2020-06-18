@@ -211,24 +211,25 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
         .id;
 
         for class in &player.class_stats {
-            let class_stat_id: i32 = sqlx::query!(
-                "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)\
+            if class.class != Class::Unknown {
+                let class_stat_id: i32 = sqlx::query!(
+                    "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6, $7)\
                             RETURNING id",
-                player_id,
-                class.class as Class,
-                class.total_time as i32,
-                class.kills as i32,
-                class.deaths as i32,
-                class.assists as i32,
-                class.dmg as i32,
-            )
-            .fetch_one(&mut tx)
-            .await?
-            .id;
+                    player_id,
+                    class.class as Class,
+                    class.total_time as i32,
+                    class.kills as i32,
+                    class.deaths as i32,
+                    class.assists as i32,
+                    class.dmg as i32,
+                )
+                .fetch_one(&mut tx)
+                .await?
+                .id;
 
-            for (weapon, stats) in &class.weapon {
-                sqlx::query!(
+                for (weapon, stats) in &class.weapon {
+                    sqlx::query!(
                         "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6)",
                         class_stat_id as i32,
@@ -238,8 +239,9 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                         stats.hits as i32,
                         stats.dmg as i32,
                     )
-                    .execute(&mut tx)
-                    .await?;
+                        .execute(&mut tx)
+                        .await?;
+                }
             }
         }
     }
