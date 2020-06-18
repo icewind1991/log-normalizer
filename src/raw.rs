@@ -55,7 +55,7 @@ pub struct Team {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Player {
     pub class_stats: Vec<ClassStat>,
-    pub team: TeamId,
+    pub team: Option<TeamId>,
     pub kills: u16,
     pub deaths: u16,
     pub assists: u16,
@@ -122,6 +122,7 @@ pub enum RawWeaponStats {
     Stats {
         kills: u32,
         dmg: u32,
+        #[serde(default)]
         avg_dmg: f32,
         shots: u32,
         hits: u32,

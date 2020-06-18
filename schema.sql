@@ -128,6 +128,7 @@ CREATE TABLE players (
     log_id          INTEGER                     NOT NULL REFERENCES logs(id),
     steam_id        BIGINT                      NOT NULL,
     name            TEXT                        NOT NULL,
+    team            team                        NOT NULL,
     kills           INTEGER                     NOT NULL,
     deaths          INTEGER                     NOT NULL,
     assists         INTEGER                     NOT NULL,

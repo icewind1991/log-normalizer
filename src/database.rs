@@ -142,10 +142,11 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
     }
 
     for (steam_id, player) in &log.players {
-        let kills = log.class_kills.get(steam_id).cloned().unwrap_or_default();
-        let player_id: i32 = sqlx::query!(
-            "INSERT INTO players (\
-                log_id, steam_id, name, kills, deaths, assists,\
+        if let Some(team) = player.team {
+            let kills = log.class_kills.get(steam_id).cloned().unwrap_or_default();
+            let player_id: i32 = sqlx::query!(
+                "INSERT INTO players (\
+                log_id, steam_id, name, team, kills, deaths, assists,\
                 suicides, dmg, damage_taken, ubers, medigun_ubers,\
                 kritzkrieg_ubers, quickfix_ubers, vacinator_ubers,\
                 drops, medkits, medkits_hp, backstabs, headshots,\
@@ -156,63 +157,65 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
             VALUES(\
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,\
                 $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,\
-                $21, $22, $23, $24, $25, $26, $27, $28, $29, $30\
+                $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,\
+                $31\
             )\
             RETURNING id",
-            id as i32,
-            u64::from(*steam_id) as i64,
-            log.names.get(steam_id).cloned().unwrap_or_default(),
-            player.kills as i32,
-            player.deaths as i32,
-            player.assists as i32,
-            player.suicides as i32,
-            player.dmg as i32,
-            player.dt_real as i32,
-            player.ubers as i32,
-            player
-                .ubertypes
-                .get(&Medigun::Medigun)
-                .copied()
-                .unwrap_or_default() as i32,
-            player
-                .ubertypes
-                .get(&Medigun::KritzKrieg)
-                .copied()
-                .unwrap_or_default() as i32,
-            player
-                .ubertypes
-                .get(&Medigun::QuickFix)
-                .copied()
-                .unwrap_or_default() as i32,
-            player
-                .ubertypes
-                .get(&Medigun::Vacinator)
-                .copied()
-                .unwrap_or_default() as i32,
-            player.drops as i32,
-            player.medkits as i32,
-            player.medkits_hp as i32,
-            player.backstabs as i32,
-            player.headshots as i32,
-            player.heal as i32,
-            heals_received.get(steam_id).copied().unwrap_or_default() as i32,
-            kills.scout as i32,
-            kills.soldier as i32,
-            kills.pyro as i32,
-            kills.demoman as i32,
-            kills.heavyweapons as i32,
-            kills.engineer as i32,
-            kills.medic as i32,
-            kills.sniper as i32,
-            kills.spy as i32
-        )
-        .fetch_one(&mut tx)
-        .await?
-        .id;
+                id as i32,
+                u64::from(*steam_id) as i64,
+                log.names.get(steam_id).cloned().unwrap_or_default(),
+                team as TeamId,
+                player.kills as i32,
+                player.deaths as i32,
+                player.assists as i32,
+                player.suicides as i32,
+                player.dmg as i32,
+                player.dt_real as i32,
+                player.ubers as i32,
+                player
+                    .ubertypes
+                    .get(&Medigun::Medigun)
+                    .copied()
+                    .unwrap_or_default() as i32,
+                player
+                    .ubertypes
+                    .get(&Medigun::KritzKrieg)
+                    .copied()
+                    .unwrap_or_default() as i32,
+                player
+                    .ubertypes
+                    .get(&Medigun::QuickFix)
+                    .copied()
+                    .unwrap_or_default() as i32,
+                player
+                    .ubertypes
+                    .get(&Medigun::Vacinator)
+                    .copied()
+                    .unwrap_or_default() as i32,
+                player.drops as i32,
+                player.medkits as i32,
+                player.medkits_hp as i32,
+                player.backstabs as i32,
+                player.headshots as i32,
+                player.heal as i32,
+                heals_received.get(steam_id).copied().unwrap_or_default() as i32,
+                kills.scout as i32,
+                kills.soldier as i32,
+                kills.pyro as i32,
+                kills.demoman as i32,
+                kills.heavyweapons as i32,
+                kills.engineer as i32,
+                kills.medic as i32,
+                kills.sniper as i32,
+                kills.spy as i32
+            )
+            .fetch_one(&mut tx)
+            .await?
+            .id;
 
-        for class in &player.class_stats {
-            if class.class != Class::Unknown {
-                let class_stat_id: i32 = sqlx::query!(
+            for class in &player.class_stats {
+                if class.class != Class::Unknown {
+                    let class_stat_id: i32 = sqlx::query!(
                     "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6, $7)\
                             RETURNING id",
@@ -224,12 +227,12 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                     class.assists as i32,
                     class.dmg as i32,
                 )
-                .fetch_one(&mut tx)
-                .await?
-                .id;
+                    .fetch_one(&mut tx)
+                    .await?
+                    .id;
 
-                for (weapon, stats) in &class.weapon {
-                    sqlx::query!(
+                    for (weapon, stats) in &class.weapon {
+                        sqlx::query!(
                         "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)\
                             VALUES($1, $2, $3, $4, $5, $6)",
                         class_stat_id as i32,
@@ -239,8 +242,9 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                         stats.hits as i32,
                         stats.dmg as i32,
                     )
-                        .execute(&mut tx)
-                        .await?;
+                            .execute(&mut tx)
+                            .await?;
+                    }
                 }
             }
         }
