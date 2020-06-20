@@ -1108,6 +1108,7 @@ dependencies = [
 [[package]]
 name = "sqlx-core"
 version = "0.3.5"
+source = "git+https://github.com/icewind1991/sqlx?branch=type_override-exprgroup-0.3.5#a831d962cccbadd39a12075fdf9958ceb518f0fc"
 dependencies = [
  "async-native-tls",
  "async-stream",
@@ -1174,6 +1175,7 @@ dependencies = [
 [[package]]
 name = "sqlx-macros"
 version = "0.3.5"
+source = "git+https://github.com/icewind1991/sqlx?branch=type_override-exprgroup-0.3.5#a831d962cccbadd39a12075fdf9958ceb518f0fc"
 dependencies = [
  "dotenv",
  "futures",
@@ -1182,7 +1184,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde_json",
- "sqlx-core 0.3.5",
+ "sqlx-core 0.3.5 (git+https://github.com/icewind1991/sqlx?branch=type_override-exprgroup-0.3.5)",
  "syn",
  "tokio",
  "url",
@@ -1193,7 +1195,7 @@ name = "sqlx-macros"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de2ae78b783af5922d811b14665a5a3755e531c3087bb805cf24cf71f15e6780"
-replace = "sqlx-macros 0.3.5"
+replace = "sqlx-macros 0.3.5 (git+https://github.com/icewind1991/sqlx?branch=type_override-exprgroup-0.3.5)"
 
 [[package]]
 name = "steamid-ng"

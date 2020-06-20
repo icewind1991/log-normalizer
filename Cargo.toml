@@ -17,4 +17,4 @@ steamid-ng = "0.3.4"
 test-case = "1.0.0"
 
 [replace]
-"sqlx-macros:0.3.5" = { path = "../sqlx/sqlx-macros" }
+"sqlx-macros:0.3.5" = { git = "https://github.com/icewind1991/sqlx", branch = "type_override-exprgroup-0.3.5" }
