@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Robin Appelman <robin@icewind.nl>"]
 edition = "2018"
 
+[[bin]]
+name = "log-normalizer"
+path = "src/main.rs"
+
 [dependencies]
 sqlx = { version = "0.3", default_features = false, features = ["macros", "postgres", "json", "runtime-tokio", "chrono"] }
 dotenv = "0.15.0"
