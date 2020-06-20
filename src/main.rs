@@ -7,16 +7,24 @@ use crate::database::store_log;
 use crate::normalized::NormalizedLog;
 use main_error::MainError;
 use sqlx::{postgres::PgQueryAs, PgPool};
+use tokio::time::{delay_for, Duration};
 
 #[tokio::main]
 async fn main() -> Result<(), MainError> {
     let database_url = dotenv::var("DATABASE_URL")?;
     let raw_database_url = dotenv::var("RAW_DATABASE_URL")?;
 
-    let pool = PgPool::builder().max_size(2).build(&database_url).await?;
+    loop {
+        normalize(&database_url, &raw_database_url).await?;
+        delay_for(Duration::from_secs(15 * 60)).await;
+    }
+}
+
+async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), MainError> {
+    let pool = PgPool::builder().max_size(2).build(database_url).await?;
     let raw_pool = PgPool::builder()
         .max_size(2)
-        .build(&raw_database_url)
+        .build(raw_database_url)
         .await?;
 
     let max = get_max_log(&raw_pool).await?;
