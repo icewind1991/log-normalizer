@@ -166,7 +166,7 @@ impl From<crate::raw::Round> for Round {
             .first_cap
             .or_else(|| {
                 raw.events.iter().find_map(|event| match event {
-                    Event::PointCap { team, .. } => Some(*team),
+                    Event::PointCap { team, .. } => *team,
                     _ => None,
                 })
             })
@@ -231,7 +231,7 @@ fn normalize_stopwatch_events(log: &mut NormalizedLog) {
             let last_event = log.rounds[1].events.pop();
             log.rounds[1].events.push(Event::PointCap {
                 time: second_half_end_time,
-                team: TeamId::Blue,
+                team: Some(TeamId::Blue),
                 point: first_half_rounds,
             });
             if let Some(last_event) = last_event {

@@ -196,28 +196,28 @@ pub enum Event {
         medigun: Medigun,
         time: u32,
         steamid: SteamID,
-        team: TeamId,
+        team: Option<TeamId>,
     },
     #[serde(rename = "pointcap")]
     PointCap {
         time: u32,
-        team: TeamId,
+        team: Option<TeamId>,
         point: u8,
     },
     MedicDeath {
         time: u32,
-        team: TeamId,
+        team: Option<TeamId>,
         steamid: SteamID,
         killer: SteamID,
     },
     RoundWin {
         time: u32,
-        team: Option<TeamId>,
+        team: Option<Option<TeamId>>,
     },
     Drop {
         time: u32,
         steamid: SteamID,
-        team: TeamId,
+        team: Option<TeamId>,
     },
     #[serde(other)]
     Other,
