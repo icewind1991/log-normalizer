@@ -12,6 +12,10 @@ CREATE TYPE event_type AS ENUM ('charge', 'pointcap', 'medic_death', 'round_win'
 
 CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vacinator');
 
+CREATE FUNCTION clean_map_name(map TEXT) RETURNS TEXT AS $$
+    SELECT regexp_replace(map, '(_(a|b|beta|u|r|v|rc|final|comptf|ugc)?[0-9]*[a-z]?$)|([0-9]+[a-z]?$)', '', 'g');
+$$ LANGUAGE SQL IMMUTABLE;
+
 CREATE TABLE logs (
     id              INTEGER                     PRIMARY KEY,
     red_score       INTEGER                     NOT NULL,
@@ -19,15 +23,26 @@ CREATE TABLE logs (
     length          INTEGER                     NOT NULL,
     game_mode       game_mode                   NOT NULL,
     map             TEXT                        NOT NULL,
+    clean_map       TEXT GENERATED ALWAYS AS (clean_map_name(map)) STORED,
     type            map_type                    NOT NULL,
-    date            TIMESTAMP WITHOUT TIME ZONE NOT NULL
+    date            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    winner          team GENERATED ALWAYS AS (CASE WHEN red_score > blue_score THEN 'red'::team WHEN blue_score > red_score THEN 'blue'::team ELSE 'other'::team END) STORED
 );
 
 CREATE INDEX logs_map_idx
     ON logs USING BTREE (map);
 
+CREATE INDEX logs_clean_map_idx
+    ON logs USING BTREE (clean_map);
+
 CREATE INDEX logs_mode_idx
     ON logs USING BTREE (game_mode);
+
+CREATE INDEX logs_winner_idx
+    ON logs USING BTREE (winner);
+
+CREATE INDEX logs_date_idx
+    ON logs USING BTREE (date);
 
 CREATE TABLE rounds (
     id              SERIAL                      PRIMARY KEY,
@@ -155,8 +170,18 @@ CREATE TABLE players (
     engineer_kills  INTEGER                     NOT NULL,
     medic_kills     INTEGER                     NOT NULL,
     sniper_kills    INTEGER                     NOT NULL,
-    spy_kills       INTEGER                     NOT NULL
+    spy_kills       INTEGER                     NOT NULL,
+    is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(team, log_id)) STORED
 );
+
+CREATE FUNCTION team_is_winner(log_id INTEGER, team team) RETURNS BOOL AS $$
+DECLARE
+    is_winner BOOLEAN;
+BEGIN
+    SELECT team = winner into is_winner FROM logs WHERE id = log_id;
+    RETURN is_winner;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
 
 CREATE INDEX players_log_id_idx
     ON players USING BTREE (log_id);
@@ -167,6 +192,12 @@ CREATE UNIQUE INDEX players_log_steam_id_idx
 CREATE INDEX players_steam_id_idx
     ON players USING BTREE (steam_id);
 
+CREATE INDEX players_team_idx
+    ON players USING BTREE (team);
+
+CREATE INDEX players_is_winner_idx
+    ON players USING BTREE (is_winner);
+
 CREATE TABLE class_stats (
     id              BIGSERIAL                   PRIMARY KEY,
     player_id       INTEGER                     NOT NULL REFERENCES players(id),
@@ -175,7 +206,8 @@ CREATE TABLE class_stats (
     kills           INTEGER                     NOT NULL,
     deaths          INTEGER                     NOT NULL,
     assists         INTEGER                     NOT NULL,
-    dmg             INTEGER                     NOT NULL
+    dmg             INTEGER                     NOT NULL,
+    dpm             DECIMAL GENERATED ALWAYS AS (dmg::DECIMAL / time) STORED
 );
 
 CREATE INDEX class_stats_player_id_idx
