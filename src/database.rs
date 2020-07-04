@@ -158,7 +158,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                 "INSERT INTO players (\
                 log_id, steam_id, name, team, kills, deaths, assists,\
                 suicides, dmg, damage_taken, ubers, medigun_ubers,\
-                kritzkrieg_ubers, quickfix_ubers, vacinator_ubers,\
+                kritzkrieg_ubers, quickfix_ubers, vaccinator_ubers,\
                 drops, medkits, medkits_hp, backstabs, headshots,\
                 heal, heals_received,\
                 scout_kills, soldier_kills, pyro_kills, demoman_kills,\
@@ -199,7 +199,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                     .unwrap_or_default() as i32,
                 player
                     .ubertypes
-                    .get(&Medigun::Vacinator)
+                    .get(&Medigun::Vaccinator)
                     .copied()
                     .unwrap_or_default() as i32,
                 player.drops as i32,

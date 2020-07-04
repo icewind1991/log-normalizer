@@ -10,7 +10,7 @@ CREATE TYPE map_type AS ENUM ('stopwatch', 'cp', 'koth', 'ctf', 'ultiduo', 'bbal
 
 CREATE TYPE event_type AS ENUM ('charge', 'pointcap', 'medic_death', 'round_win');
 
-CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vacinator');
+CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vaccinator');
 
 CREATE FUNCTION clean_map_name(map TEXT) RETURNS TEXT AS $$
     SELECT regexp_replace(map, '(_(a|b|beta|u|r|v|rc|final|comptf|ugc)?[0-9]*[a-z]?$)|([0-9]+[a-z]?$)', '', 'g');
@@ -138,45 +138,6 @@ CREATE TABLE events_round_win (
 CREATE UNIQUE INDEX events_round_win_round_id_idx
     ON events_round_win USING BTREE (round_id);
 
-CREATE TABLE players (
-    id              BIGSERIAL                   PRIMARY KEY,
-    log_id          INTEGER                     NOT NULL REFERENCES logs(id),
-    steam_id        BIGINT                      NOT NULL,
-    name            TEXT                        NOT NULL,
-    team            team                        NOT NULL,
-    kills           INTEGER                     NOT NULL,
-    deaths          INTEGER                     NOT NULL,
-    assists         INTEGER                     NOT NULL,
-    suicides        INTEGER                     NOT NULL,
-    dmg             INTEGER                     NOT NULL,
-    damage_taken    INTEGER                     NOT NULL,
-    ubers           INTEGER                     NOT NULL,
-    medigun_ubers   INTEGER                     NOT NULL,
-    kritzkrieg_ubers INTEGER                    NOT NULL,
-    quickfix_ubers  INTEGER                     NOT NULL,
-    vacinator_ubers INTEGER                     NOT NULL,
-    drops           INTEGER                     NOT NULL,
-    medkits         INTEGER                     NOT NULL,
-    medkits_hp      INTEGER                     NOT NULL,
-    backstabs       INTEGER                     NOT NULL,
-    headshots       INTEGER                     NOT NULL,
-    heal            INTEGER                     NOT NULL,
-    heals_received  INTEGER                     NOT NULL,
-    scout_kills     INTEGER                     NOT NULL,
-    soldier_kills   INTEGER                     NOT NULL,
-    pyro_kills      INTEGER                     NOT NULL,
-    demoman_kills   INTEGER                     NOT NULL,
-    heavy_kills     INTEGER                     NOT NULL,
-    engineer_kills  INTEGER                     NOT NULL,
-    medic_kills     INTEGER                     NOT NULL,
-    sniper_kills    INTEGER                     NOT NULL,
-    spy_kills       INTEGER                     NOT NULL,
-    is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(team, log_id)) STORED,
-    game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
-    clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
-    date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED
-);
-
 CREATE FUNCTION team_is_winner(log_id INTEGER, team team) RETURNS BOOL AS $$
 DECLARE
     is_winner BOOLEAN;
@@ -213,6 +174,45 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
+CREATE TABLE players (
+    id              BIGSERIAL                   PRIMARY KEY,
+    log_id          INTEGER                     NOT NULL REFERENCES logs(id),
+    steam_id        BIGINT                      NOT NULL,
+    name            TEXT                        NOT NULL,
+    team            team                        NOT NULL,
+    kills           INTEGER                     NOT NULL,
+    deaths          INTEGER                     NOT NULL,
+    assists         INTEGER                     NOT NULL,
+    suicides        INTEGER                     NOT NULL,
+    dmg             INTEGER                     NOT NULL,
+    damage_taken    INTEGER                     NOT NULL,
+    ubers           INTEGER                     NOT NULL,
+    medigun_ubers   INTEGER                     NOT NULL,
+    kritzkrieg_ubers INTEGER                    NOT NULL,
+    quickfix_ubers  INTEGER                     NOT NULL,
+    vaccinator_ubers INTEGER                     NOT NULL,
+    drops           INTEGER                     NOT NULL,
+    medkits         INTEGER                     NOT NULL,
+    medkits_hp      INTEGER                     NOT NULL,
+    backstabs       INTEGER                     NOT NULL,
+    headshots       INTEGER                     NOT NULL,
+    heal            INTEGER                     NOT NULL,
+    heals_received  INTEGER                     NOT NULL,
+    scout_kills     INTEGER                     NOT NULL,
+    soldier_kills   INTEGER                     NOT NULL,
+    pyro_kills      INTEGER                     NOT NULL,
+    demoman_kills   INTEGER                     NOT NULL,
+    heavy_kills     INTEGER                     NOT NULL,
+    engineer_kills  INTEGER                     NOT NULL,
+    medic_kills     INTEGER                     NOT NULL,
+    sniper_kills    INTEGER                     NOT NULL,
+    spy_kills       INTEGER                     NOT NULL,
+    is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(log_id, team)) STORED,
+    game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
+    clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
+    date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED
+);
+
 CREATE INDEX players_log_id_idx
     ON players USING BTREE (log_id);
 
@@ -239,14 +239,13 @@ CREATE INDEX players_date_idx
 
 CREATE TABLE class_stats (
     id              BIGSERIAL                   PRIMARY KEY,
-    player_id       INTEGER                     NOT NULL REFERENCES players(id),
+    player_id       BIGINT                     NOT NULL REFERENCES players(id),
     type            class_type                  NOT NULL,
     time            INTEGER                     NOT NULL,
     kills           INTEGER                     NOT NULL,
     deaths          INTEGER                     NOT NULL,
     assists         INTEGER                     NOT NULL,
     dmg             INTEGER                     NOT NULL,
-    dpm             DECIMAL GENERATED ALWAYS AS (dmg::DECIMAL / time) STORED
 );
 
 CREATE INDEX class_stats_player_id_idx
@@ -257,7 +256,7 @@ CREATE UNIQUE INDEX class_stats_player_id_type_idx
 
 CREATE TABLE player_weapon_stats (
     id              BIGSERIAL                   PRIMARY KEY,
-    class_stat_id   INTEGER                     NOT NULL REFERENCES class_stats(id),
+    class_stat_id   BIGINT                     NOT NULL REFERENCES class_stats(id),
     weapon          TEXT                        NOT NULL,
     kills           INTEGER                     NOT NULL,
     shots           INTEGER                     NOT NULL,
