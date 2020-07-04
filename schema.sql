@@ -171,7 +171,10 @@ CREATE TABLE players (
     medic_kills     INTEGER                     NOT NULL,
     sniper_kills    INTEGER                     NOT NULL,
     spy_kills       INTEGER                     NOT NULL,
-    is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(team, log_id)) STORED
+    is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(team, log_id)) STORED,
+    game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
+    clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
+    date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED
 );
 
 CREATE FUNCTION team_is_winner(log_id INTEGER, team team) RETURNS BOOL AS $$
@@ -180,6 +183,33 @@ DECLARE
 BEGIN
     SELECT team = winner into is_winner FROM logs WHERE id = log_id;
     RETURN is_winner;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
+CREATE FUNCTION get_game_mode(log_id INTEGER) RETURNS game_mode AS $$
+DECLARE
+    result game_mode;
+BEGIN
+    SELECT game_mode into result FROM logs WHERE id = log_id;
+    RETURN result;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
+CREATE FUNCTION get_clean_map(log_id INTEGER) RETURNS TEXT AS $$
+DECLARE
+    result TEXT;
+BEGIN
+    SELECT clean_map into result FROM logs WHERE id = log_id;
+    RETURN result;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
+CREATE FUNCTION get_date(log_id INTEGER) RETURNS TIMESTAMP WITHOUT TIME ZONE AS $$
+DECLARE
+    result TIMESTAMP WITHOUT TIME ZONE;
+BEGIN
+    SELECT date into result FROM logs WHERE id = log_id;
+    RETURN result;
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
@@ -197,6 +227,15 @@ CREATE INDEX players_team_idx
 
 CREATE INDEX players_is_winner_idx
     ON players USING BTREE (is_winner);
+
+CREATE INDEX players_game_mode_idx
+    ON players USING BTREE (game_mode);
+
+CREATE INDEX players_clean_map_idx
+    ON players USING BTREE (clean_map);
+
+CREATE INDEX players_date_idx
+    ON players USING BTREE (date);
 
 CREATE TABLE class_stats (
     id              BIGSERIAL                   PRIMARY KEY,
