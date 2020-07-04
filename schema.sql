@@ -270,3 +270,31 @@ CREATE INDEX player_weapon_stats_class_stat_id_idx
 
 CREATE UNIQUE INDEX player_weapon_stats_class_stat_id_weapon_idx
     ON player_weapon_stats USING BTREE (class_stat_id, weapon);
+
+CREATE MATERIALIZED VIEW player_stats AS
+    SELECT
+        game_mode, clean_map, extract(year from date) as year, type as class,
+            sum(class_stats.dmg) as damage,
+            sum(class_stats.kills) as kills,
+            sum(class_stats.deaths) as deaths,
+            count(*) as count,
+            sum(is_winner::INTEGER) as wins,
+            steam_id
+        FROM players
+        INNER JOIN class_stats ON players.id = class_stats.player_id
+        GROUP BY game_mode, clean_map, extract(year from date), type, steam_id;
+
+CREATE INDEX player_stats_steam_id_idx
+    ON player_stats USING BTREE (steam_id);
+
+CREATE INDEX player_stats_game_mode_idx
+    ON player_stats USING BTREE (game_mode);
+
+CREATE INDEX player_stats_class_idx
+    ON player_stats USING BTREE (class);
+
+CREATE INDEX player_stats_year_idx
+    ON player_stats USING BTREE (year);
+
+CREATE UNIQUE INDEX player_stats_unique_idx
+    ON player_stats USING BTREE (game_mode, clean_map, year, steam_id, class);
