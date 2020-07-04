@@ -298,3 +298,34 @@ CREATE INDEX player_stats_year_idx
 
 CREATE UNIQUE INDEX player_stats_unique_idx
     ON player_stats USING BTREE (game_mode, clean_map, year, steam_id, class);
+
+CREATE MATERIALIZED VIEW player_names AS
+    SELECT
+        steam_id, name, sum(length) as TIME, count(*) AS count
+    FROM players
+    INNER JOIN logs on players.log_id = logs.id
+    GROUP BY steam_id, name;
+
+CREATE INDEX player_names_steam_id_idx
+    ON player_names USING BTREE (steam_id);
+
+CREATE UNIQUE INDEX player_names_steam_id_name_idx
+    ON player_names USING BTREE (steam_id, name);
+
+CREATE INDEX player_names_search_idx
+    ON player_names USING GIN (name gin_trgm_ops);
+
+CREATE MATERIALIZED VIEW user_names AS
+    WITH names AS
+             (
+                 select name, count, steam_id,
+                        rank() over (partition by steam_id order by steam_id, count desc) rn
+                 from player_names
+             )
+    SELECT steam_id, MAX(name) as name
+    FROM names
+    WHERE rn = 1
+    GROUP BY steam_id;
+
+CREATE UNIQUE INDEX user_names_steam_id_idx
+    ON user_names USING BTREE (steam_id);
