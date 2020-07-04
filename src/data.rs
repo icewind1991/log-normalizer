@@ -67,7 +67,7 @@ pub enum EventType {
 pub enum Medigun {
     KritzKrieg,
     QuickFix,
-    Vacinator,
+    Vaccinator,
     #[serde(other)]
     Medigun,
 }
