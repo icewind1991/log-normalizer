@@ -276,11 +276,16 @@ CREATE MATERIALIZED VIEW player_stats AS
             sum(class_stats.dmg) as damage,
             sum(class_stats.kills) as kills,
             sum(class_stats.deaths) as deaths,
+            sum(class_stats.time) as time,
             count(*) as count,
             sum(is_winner::INTEGER) as wins,
             steam_id
         FROM players
         INNER JOIN class_stats ON players.id = class_stats.player_id
+        WHERE time < 3600 AND class_stats.kills < 100 AND game_mode != 'other'
+          AND class_stats.type != 'unknown' AND class_stats.kills < 100
+          AND class_stats.deaths < 100 AND class_stats.dmg < 50000
+          AND clean_map != ''
         GROUP BY game_mode, clean_map, extract(year from date), type, steam_id;
 
 CREATE INDEX player_stats_steam_id_idx
