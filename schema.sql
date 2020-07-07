@@ -174,6 +174,15 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
+CREATE FUNCTION get_length(log_id INTEGER) RETURNS INTEGER AS $$
+DECLARE
+    result INTEGER;
+BEGIN
+    SELECT length into result FROM logs WHERE id = log_id;
+    RETURN result;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
 CREATE TABLE players (
     id              BIGSERIAL                   PRIMARY KEY,
     log_id          INTEGER                     NOT NULL REFERENCES logs(id),
@@ -207,10 +216,20 @@ CREATE TABLE players (
     medic_kills     INTEGER                     NOT NULL,
     sniper_kills    INTEGER                     NOT NULL,
     spy_kills       INTEGER                     NOT NULL,
+    scout_deaths    INTEGER                     NOT NULL,
+    soldier_deaths  INTEGER                     NOT NULL,
+    pyro_deaths     INTEGER                     NOT NULL,
+    demoman_deaths  INTEGER                     NOT NULL,
+    heavy_deaths    INTEGER                     NOT NULL,
+    engineer_deaths INTEGER                     NOT NULL,
+    medic_deaths    INTEGER                     NOT NULL,
+    sniper_deaths   INTEGER                     NOT NULL,
+    spy_deaths      INTEGER                     NOT NULL,
     is_winner       BOOL GENERATED ALWAYS AS (team_is_winner(log_id, team)) STORED,
     game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
     clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
-    date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED
+    date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED,
+    length          INTEGER GENERATED ALWAYS AS (get_length(log_id)) STORED
 );
 
 CREATE INDEX players_log_id_idx
@@ -245,7 +264,7 @@ CREATE TABLE class_stats (
     kills           INTEGER                     NOT NULL,
     deaths          INTEGER                     NOT NULL,
     assists         INTEGER                     NOT NULL,
-    dmg             INTEGER                     NOT NULL,
+    dmg             INTEGER                     NOT NULL
 );
 
 CREATE INDEX class_stats_player_id_idx
@@ -272,21 +291,27 @@ CREATE UNIQUE INDEX player_weapon_stats_class_stat_id_weapon_idx
 
 CREATE MATERIALIZED VIEW player_stats AS
     SELECT
-        game_mode, clean_map, extract(year from date) as year, type as class,
+        game_mode, clean_map, extract(year from date)::INT as year,
+            extract(month from date)::INT as month,
+            class_stats.type as class,
             sum(class_stats.dmg) as damage,
             sum(class_stats.kills) as kills,
             sum(class_stats.deaths) as deaths,
+            sum(class_stats.assists) as assists,
             sum(class_stats.time) as time,
+            sum(players.heals_received * (length / time)) as heals_received,
+            sum(players.damage_taken * (length / time)) as damage_taken,
             count(*) as count,
             sum(is_winner::INTEGER) as wins,
             steam_id
         FROM players
         INNER JOIN class_stats ON players.id = class_stats.player_id
-        WHERE time < 3600 AND class_stats.kills < 100 AND game_mode != 'other'
+        WHERE time < 3600 AND time > 0 AND class_stats.kills < 100 AND game_mode != 'other'
           AND class_stats.type != 'unknown' AND class_stats.kills < 100
           AND class_stats.deaths < 100 AND class_stats.dmg < 50000
-          AND clean_map != ''
-        GROUP BY game_mode, clean_map, extract(year from date), type, steam_id;
+          AND clean_map != '' AND damage_taken < 100000 AND heals_received < 100000
+        GROUP BY game_mode, clean_map, extract(year from date)::INT, extract(month from date)::INT,
+                 class_stats.type, steam_id;
 
 CREATE INDEX player_stats_steam_id_idx
     ON player_stats USING BTREE (steam_id);
@@ -297,17 +322,16 @@ CREATE INDEX player_stats_game_mode_idx
 CREATE INDEX player_stats_class_idx
     ON player_stats USING BTREE (class);
 
-CREATE INDEX player_stats_year_idx
-    ON player_stats USING BTREE (year);
+CREATE INDEX player_stats_date_idx
+    ON player_stats USING BTREE (year, month);
 
 CREATE UNIQUE INDEX player_stats_unique_idx
-    ON player_stats USING BTREE (game_mode, clean_map, year, steam_id, class);
+    ON player_stats USING BTREE (game_mode, clean_map, year, month, steam_id, class);
 
 CREATE MATERIALIZED VIEW player_names AS
     SELECT
         steam_id, name, sum(length) as TIME, count(*) AS count
     FROM players
-    INNER JOIN logs on players.log_id = logs.id
     GROUP BY steam_id, name;
 
 CREATE INDEX player_names_steam_id_idx

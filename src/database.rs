@@ -154,6 +154,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
     for (steam_id, player) in &log.players {
         if let Some(team) = player.team {
             let kills = log.class_kills.get(steam_id).cloned().unwrap_or_default();
+            let deaths = log.class_deaths.get(steam_id).cloned().unwrap_or_default();
             let player_id: i64 = sqlx::query!(
                 "INSERT INTO players (\
                 log_id, steam_id, name, team, kills, deaths, assists,\
@@ -162,13 +163,15 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                 drops, medkits, medkits_hp, backstabs, headshots,\
                 heal, heals_received,\
                 scout_kills, soldier_kills, pyro_kills, demoman_kills,\
-                heavy_kills, engineer_kills, medic_kills, sniper_kills, spy_kills
+                heavy_kills, engineer_kills, medic_kills, sniper_kills, spy_kills,
+                scout_deaths, soldier_deaths, pyro_deaths, demoman_deaths,\
+                heavy_deaths, engineer_deaths, medic_deaths, sniper_deaths, spy_deaths
             )\
             VALUES(\
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,\
                 $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,\
                 $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,\
-                $31\
+                $31, $32, $33, $34, $35, $36, $37, $38, $39, $40\
             )\
             RETURNING id",
                 id as i32,
@@ -217,7 +220,16 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                 kills.engineer as i32,
                 kills.medic as i32,
                 kills.sniper as i32,
-                kills.spy as i32
+                kills.spy as i32,
+                deaths.scout as i32,
+                deaths.soldier as i32,
+                deaths.pyro as i32,
+                deaths.demoman as i32,
+                deaths.heavyweapons as i32,
+                deaths.engineer as i32,
+                deaths.medic as i32,
+                deaths.sniper as i32,
+                deaths.spy as i32,
             )
             .fetch_one(&mut tx)
             .await?
