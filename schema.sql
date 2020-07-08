@@ -13,7 +13,7 @@ CREATE TYPE event_type AS ENUM ('charge', 'pointcap', 'medic_death', 'round_win'
 CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vaccinator');
 
 CREATE FUNCTION clean_map_name(map TEXT) RETURNS TEXT AS $$
-    SELECT regexp_replace(map, '(_(a|b|beta|u|r|v|rc|final|comptf|ugc)?[0-9]*[a-z]?$)|([0-9]+[a-z]?$)', '', 'g');
+    SELECT regexp_replace(map, '((_(a|b|beta|u|r|v|rc|final|comptf|ugc|nb)?[0-9]*){1,2}[a-z]?$)|([0-9]+[a-z]?$)', '', 'g');
 $$ LANGUAGE SQL IMMUTABLE;
 
 CREATE TABLE logs (
@@ -255,6 +255,9 @@ CREATE INDEX players_clean_map_idx
 
 CREATE INDEX players_date_idx
     ON players USING BTREE (date);
+
+CREATE INDEX players_year_idx
+    ON players USING BTREE (extract(year from date));
 
 CREATE TABLE class_stats (
     id              BIGSERIAL                   PRIMARY KEY,
