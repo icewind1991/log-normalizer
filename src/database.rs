@@ -5,12 +5,14 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use std::collections::HashMap;
 use steamid_ng::SteamID;
+use tracing::instrument;
 
+#[instrument(skip(pool, log))]
 pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
     sqlx::query!(
-        "INSERT INTO logs(id, red_score, blue_score, length, game_mode, map, type, date)\
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+        "INSERT INTO logs(id, red_score, blue_score, length, game_mode, map, type, date, version)\
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         id,
         log.teams.red.score as i32,
         log.teams.blue.score as i32,
@@ -18,7 +20,8 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
         log.game_mode() as GameMode,
         log.info.map,
         log.info.map_type() as MapType,
-        log.info.date() as DateTime<Utc>
+        log.info.date() as DateTime<Utc>,
+        2
     )
     .execute(&mut tx)
     .await?;
@@ -255,15 +258,15 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
 
                     for (weapon, stats) in &class.weapon {
                         sqlx::query!(
-                        "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)\
-                            VALUES($1, $2, $3, $4, $5, $6)",
-                        class_stat_id,
-                        *weapon,
-                        stats.kills as i32,
-                        stats.shots as i32,
-                        stats.hits as i32,
-                        stats.dmg as i32,
-                    )
+                            "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)\
+                                VALUES($1, $2, $3, $4, $5, $6)",
+                            class_stat_id,
+                            *weapon,
+                            stats.kills as i32,
+                            stats.shots as i32,
+                            stats.hits as i32,
+                            stats.dmg as i32,
+                        )
                             .execute(&mut tx)
                             .await?;
                     }
@@ -271,6 +274,53 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
             }
         }
     }
+
+    for kill_streak in &log.kill_streaks {
+        sqlx::query!(
+            "INSERT INTO kill_streaks(log_id, steam_id, time, streak)\
+                VALUES($1, $2, $3, $4)",
+            id,
+            u64::from(kill_streak.steamid) as i64,
+            kill_streak.time,
+            kill_streak.streak,
+        )
+        .execute(&mut tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+
+    Ok(())
+}
+
+#[instrument(skip(pool, log))]
+pub async fn upgrade(
+    pool: &PgPool,
+    id: i32,
+    log: &NormalizedLog,
+    from: i16,
+    to: i16,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+
+    if from <= 1 && to >= 2 {
+        for kill_streak in &log.kill_streaks {
+            sqlx::query!(
+                "INSERT INTO kill_streaks(log_id, steam_id, time, streak)\
+                VALUES($1, $2, $3, $4)",
+                id,
+                u64::from(kill_streak.steamid) as i64,
+                kill_streak.time,
+                kill_streak.streak,
+            )
+            .execute(&mut tx)
+            .await?;
+        }
+    }
+
+    sqlx::query!("UPDATE logs SET version = $1 WHERE id = $2", to, id)
+        .execute(&mut tx)
+        .await?;
 
     tx.commit().await?;
 

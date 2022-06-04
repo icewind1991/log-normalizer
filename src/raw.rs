@@ -1,7 +1,7 @@
 use crate::data::{Class, Medigun, TeamId};
-use serde::export::TryFrom;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use steamid_ng::SteamID;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -24,6 +24,8 @@ pub struct RawLog {
     pub class_kill_assists: Option<HashMap<SteamID, ClassNumbers>>,
     pub chat: Vec<ChatMessage>,
     pub info: Info,
+    #[serde(rename = "killstreaks")]
+    pub kill_streaks: Option<Vec<KillStreak>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -343,6 +345,13 @@ pub struct Uploader {
     pub id: SteamID,
     pub name: String,
     pub info: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct KillStreak {
+    pub steamid: SteamID,
+    pub streak: i32,
+    pub time: i32,
 }
 
 #[cfg(test)]

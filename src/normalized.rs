@@ -2,7 +2,7 @@ pub use crate::data::TeamId;
 use crate::data::{GameMode, MapType};
 use crate::raw::RawLog;
 pub use crate::raw::{
-    ChatMessage, ClassNumbers, Event, Player, RoundPlayer, Team, Teams, Uploader,
+    ChatMessage, ClassNumbers, Event, KillStreak, Player, RoundPlayer, Team, Teams, Uploader,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
@@ -24,6 +24,7 @@ pub struct NormalizedLog {
     pub class_kill_assists: HashMap<SteamID, ClassNumbers>,
     pub chat: Vec<ChatMessage>,
     pub info: Info,
+    pub kill_streaks: Vec<KillStreak>,
 }
 
 impl NormalizedLog {
@@ -149,6 +150,7 @@ impl From<RawLog> for NormalizedLog {
             class_kill_assists: raw.class_kill_assists.unwrap_or_default(),
             chat: raw.chat,
             info,
+            kill_streaks: raw.kill_streaks.unwrap_or_default(),
         };
 
         normalize_stopwatch_events(&mut normalized);

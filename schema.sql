@@ -26,7 +26,8 @@ CREATE TABLE logs (
     clean_map       TEXT GENERATED ALWAYS AS (clean_map_name(map)) STORED,
     type            map_type                    NOT NULL,
     date            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    winner          team GENERATED ALWAYS AS (CASE WHEN red_score > blue_score THEN 'red'::team WHEN blue_score > red_score THEN 'blue'::team ELSE 'other'::team END) STORED
+    winner          team GENERATED ALWAYS AS (CASE WHEN red_score > blue_score THEN 'red'::team WHEN blue_score > red_score THEN 'blue'::team ELSE 'other'::team END) STORED,
+    version         SMALLINT                    NOT NULL
 );
 
 CREATE INDEX logs_map_idx
@@ -43,6 +44,9 @@ CREATE INDEX logs_winner_idx
 
 CREATE INDEX logs_date_idx
     ON logs USING BTREE (date);
+
+CREATE INDEX logs_version_idx
+    ON logs USING BTREE (version);
 
 CREATE TABLE rounds (
     id              SERIAL                      PRIMARY KEY,
@@ -360,3 +364,23 @@ CREATE MATERIALIZED VIEW user_names AS
 
 CREATE UNIQUE INDEX user_names_steam_id_idx
     ON user_names USING BTREE (steam_id);
+
+CREATE TABLE kill_streaks (
+    id              BIGSERIAL                   PRIMARY KEY,
+    log_id          INTEGER                     NOT NULL REFERENCES logs(id),
+    steam_id        BIGINT                      NOT NULL,
+    time            INTEGER                     NOT NULL,
+    streak          INTEGER                     NOT NULL
+);
+
+CREATE INDEX kill_streaks_id_idx
+    ON kill_streaks USING BTREE (id);
+
+CREATE INDEX kill_streaks_steam_id_idx
+    ON kill_streaks USING BTREE (steam_id);
+
+CREATE INDEX kill_streaks_log_id_idx
+    ON kill_streaks USING BTREE (log_id);
+
+CREATE INDEX kill_streaks_steam_id_streak_idx
+    ON kill_streaks USING BTREE (steam_id, streak);

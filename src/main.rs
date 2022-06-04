@@ -3,14 +3,19 @@ mod database;
 mod normalized;
 mod raw;
 
-use crate::database::store_log;
+use crate::database::{store_log, upgrade};
 use crate::normalized::NormalizedLog;
 use main_error::MainError;
 use sqlx::{postgres::PgQueryAs, PgPool};
 use tokio::time::{delay_for, Duration};
+use tracing::{error, info, instrument};
+
+const OLD_VERSION: i16 = 1;
+const VERSION: i16 = 2;
 
 #[tokio::main]
 async fn main() -> Result<(), MainError> {
+    tracing_subscriber::fmt::init();
     let database_url = dotenv::var("DATABASE_URL")?;
     let raw_database_url = dotenv::var("RAW_DATABASE_URL")?;
 
@@ -28,19 +33,39 @@ async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), Mai
         .await?;
 
     let max = get_max_log(&raw_pool).await?;
+    let old = get_min_old_stored_log(&pool, VERSION).await?;
     let from = get_max_stored_log(&pool).await?;
 
-    for id in (from + 1)..=max {
-        print!("{} ", id);
+    for id in old..=from {
+        info!(id = id, from = OLD_VERSION, to = VERSION, "migrating");
         if let Some(log) = get_log(&raw_pool, id).await? {
-            println!("{}", log.info.map);
+            upgrade(&pool, id, &log, OLD_VERSION, VERSION).await?;
+        } else {
+            error!(id = id, "invalid");
+        }
+    }
+
+    for id in (from + 1)..=max {
+        if let Some(log) = get_log(&raw_pool, id).await? {
+            info!(id = id, map = display(&log.info.map), "normalizing");
             store_log(&pool, id, &log).await?;
         } else {
-            println!("invalid");
+            error!(id = id, "invalid");
         }
     }
 
     Ok(())
+}
+
+async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<i32, MainError> {
+    Ok(sqlx::query!(
+        r#"SELECT MIN(id) as id from logs WHERE version < $1"#,
+        version
+    )
+    .fetch_one(pool)
+    .await?
+    .id
+    .unwrap_or_default())
 }
 
 async fn get_max_stored_log(pool: &PgPool) -> Result<i32, MainError> {
@@ -58,6 +83,7 @@ async fn get_max_log(pool: &PgPool) -> Result<i32, MainError> {
     Ok(row.0)
 }
 
+#[instrument(skip(pool))]
 async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainError> {
     let row: (serde_json::Value,) =
         sqlx::query_as(r#"SELECT json as id from logs_raw where id = $1"#)
