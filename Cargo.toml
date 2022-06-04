@@ -9,16 +9,16 @@ name = "log-normalizer"
 path = "src/main.rs"
 
 [dependencies]
-sqlx = { version = "0.3", default_features = false, features = ["macros", "postgres", "json", "runtime-tokio", "chrono"] }
+sqlx = { version = "0.5.11", default_features = false, features = ["macros", "postgres", "json", "chrono", "runtime-tokio-rustls", "offline"] }
 dotenv = "0.15.0"
-main_error = "0.1.0"
-tokio = { version = "0.2.13", features = ["macros", "time"] }
-reqwest = { version = "0.10.4", features = [] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
-steamid-ng = "0.3.4"
-test-case = "1.0.0"
+main_error = "0.1.2"
+tokio = { version = "1.17.0", features = ["macros", "time"] }
+reqwest = { version = "0.11.10", features = [] }
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.79"
+chrono = { version = "0.4.19", features = ["serde"] }
+steamid-ng = "1.0.0"
+test-case = "2.0.2"
 tracing = "0.1.33"
 tracing-subscriber = "0.3.11"
 

@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
-#[sqlx(rename = "team")]
+#[sqlx(type_name = "team")]
 #[sqlx(rename_all = "lowercase")]
 pub enum TeamId {
     Blue,
@@ -19,7 +19,7 @@ impl Default for TeamId {
 #[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
-#[sqlx(rename = "class_type")]
+#[sqlx(type_name = "class_type")]
 pub enum Class {
     Scout,
     Soldier,
@@ -35,7 +35,7 @@ pub enum Class {
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Eq, PartialEq)]
-#[sqlx(rename = "game_mode")]
+#[sqlx(type_name = "game_mode")]
 pub enum GameMode {
     #[sqlx(rename = "ultiduo")]
     UltiDuo,
@@ -80,7 +80,7 @@ impl Default for Medigun {
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Eq, PartialEq)]
 #[sqlx(rename_all = "lowercase")]
-#[sqlx(rename = "map_type")]
+#[sqlx(type_name = "map_type")]
 pub enum MapType {
     Stopwatch,
     Cp,

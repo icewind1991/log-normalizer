@@ -1,0 +1,446 @@
+{
+  "db": "PostgreSQL",
+  "0000e8f1c60464bde61980810f4013b3ff71d318291de9d8cf595474f4ee8f32": {
+    "query": "INSERT INTO events_round_win(round_id, time, team)VALUES($1, $2, $3)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "094070119b4aeddc0bc17bfd96d96a23a31b08a425569ea95f9c9f32cb1d02aa": {
+    "query": "SELECT MIN(id) as id from logs WHERE version < $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int2"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
+  "253ca64f81921ad7351335d8b47967a4b6831b16d8128a11b40daa63b31f5a4c": {
+    "query": "INSERT INTO players (log_id, steam_id, name, team, kills, deaths, assists,suicides, dmg, damage_taken, ubers, medigun_ubers,kritzkrieg_ubers, quickfix_ubers, vaccinator_ubers,drops, medkits, medkits_hp, backstabs, headshots,heal, heals_received,scout_kills, soldier_kills, pyro_kills, demoman_kills,heavy_kills, engineer_kills, medic_kills, sniper_kills, spy_kills,\n                scout_deaths, soldier_deaths, pyro_deaths, demoman_deaths,heavy_deaths, engineer_deaths, medic_deaths, sniper_deaths, spy_deaths\n            )VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,$21, $22, $23, $24, $25, $26, $27, $28, $29, $30,$31, $32, $33, $34, $35, $36, $37, $38, $39, $40)RETURNING id",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int8",
+          "Text",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "417cfaecb2cb45d16c9da2dc2f8e6d1a37280842a5fc9ffb85b5d1955a54670d": {
+    "query": "INSERT INTO logs(id, red_score, blue_score, length, game_mode, map, type, date, version)VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "game_mode",
+              "kind": {
+                "Enum": [
+                  "ultiduo",
+                  "4v4",
+                  "6v6",
+                  "7v7",
+                  "9v9",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Text",
+          {
+            "Custom": {
+              "name": "map_type",
+              "kind": {
+                "Enum": [
+                  "stopwatch",
+                  "cp",
+                  "koth",
+                  "ctf",
+                  "ultiduo",
+                  "bball",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Timestamp",
+          "Int2"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "425af9e4b088335acabe4bf74c3b11c0cab5f033b57197c992533889a4d1300d": {
+    "query": "INSERT INTO player_weapon_stats(class_stat_id, weapon, kills, shots, hits, dmg)VALUES($1, $2, $3, $4, $5, $6)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Text",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "4dcd86f5ef23f46b5c6cd391522791a609e04e068009678ba95b81cb385b9e89": {
+    "query": "INSERT INTO events_charge(round_id, time, team, medigun, steam_id)VALUES($1, $2, $3, $4, $5)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "medigun",
+              "kind": {
+                "Enum": [
+                  "medigun",
+                  "kritzkrieg",
+                  "quickfix",
+                  "vaccinator"
+                ]
+              }
+            }
+          },
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "581b192c18e54b711d0e3b6d38490984c48320fe4607c7eacc7b9002daaf7771": {
+    "query": "INSERT INTO kill_streaks(log_id, steam_id, time, streak)VALUES($1, $2, $3, $4)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int8",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "7669da21c453d1d4e5d5e7aead5a0fbc4307aba66debd679159374c5647fd0fe": {
+    "query": "INSERT INTO events_medic_death(round_id, time, team, steam_id, killer)VALUES($1, $2, $3, $4, $5)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "982bc615a035019855317b3b47a3ac10159d81318db323c2d076c9b4c04a4e02": {
+    "query": "INSERT INTO events_drop(round_id, time, team, steam_id)VALUES($1, $2, $3, $4)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "c9f31bcb2cb8b76f7cd2e66284b70f79e462ac70f94cdab022bdce63929731b1": {
+    "query": "UPDATE logs SET version = $1 WHERE id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int2",
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "d4d72675d0a0792d14472c6bfc00454791dea1eae933818d168171f818bb7dc9": {
+    "query": "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)VALUES($1, $2, $3, $4, $5, $6, $7)RETURNING id",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          {
+            "Custom": {
+              "name": "class_type",
+              "kind": {
+                "Enum": [
+                  "scout",
+                  "soldier",
+                  "pyro",
+                  "demoman",
+                  "heavyweapons",
+                  "engineer",
+                  "medic",
+                  "sniper",
+                  "spy",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "eab40a01c0df317cdfb97eb4f88884f6776897ec2c2ecb8cae05748c8d087711": {
+    "query": "INSERT INTO rounds(\n                round, log_id, length, winner, first_cap, red_score, blue_score,\n                red_kills, blue_kills, red_dmg, blue_dmg, red_ubers, blue_ubers\n            )\n            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n            RETURNING id",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "f4daaeeaaf227491627c0bb54319a5f356028a591fdac2f41ba2dce1c5053d4a": {
+    "query": "SELECT MAX(id) as id from logs",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
+  "f8be06a1f3b2b9755faf3ca32921528528240308ed036cd6cf320ca4d31438b9": {
+    "query": "INSERT INTO events_point_cap(round_id, time, team, point)VALUES($1, $2, $3, $4)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          {
+            "Custom": {
+              "name": "team",
+              "kind": {
+                "Enum": [
+                  "blue",
+                  "red",
+                  "other"
+                ]
+              }
+            }
+          },
+          "Int4"
+        ]
+      },
+      "nullable": []
+    }
+  }
+}

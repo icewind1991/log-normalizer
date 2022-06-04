@@ -6,8 +6,9 @@ mod raw;
 use crate::database::{store_log, upgrade};
 use crate::normalized::NormalizedLog;
 use main_error::MainError;
-use sqlx::{postgres::PgQueryAs, PgPool};
-use tokio::time::{delay_for, Duration};
+use sqlx::pool::PoolOptions;
+use sqlx::PgPool;
+use tokio::time::{sleep, Duration};
 use tracing::{error, info, instrument};
 
 const OLD_VERSION: i16 = 1;
@@ -21,15 +22,18 @@ async fn main() -> Result<(), MainError> {
 
     loop {
         normalize(&database_url, &raw_database_url).await?;
-        delay_for(Duration::from_secs(15 * 60)).await;
+        sleep(Duration::from_secs(15 * 60)).await;
     }
 }
 
 async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), MainError> {
-    let pool = PgPool::builder().max_size(2).build(database_url).await?;
-    let raw_pool = PgPool::builder()
-        .max_size(2)
-        .build(raw_database_url)
+    let pool = PoolOptions::new()
+        .max_connections(2)
+        .connect(database_url)
+        .await?;
+    let raw_pool = PoolOptions::new()
+        .max_connections(2)
+        .connect(raw_database_url)
         .await?;
 
     let max = get_max_log(&raw_pool).await?;

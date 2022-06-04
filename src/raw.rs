@@ -1,7 +1,7 @@
 use crate::data::{Class, Medigun, TeamId};
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use steamid_ng::SteamID;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -284,13 +284,13 @@ pub enum ChatFrom {
 }
 
 impl TryFrom<String> for ChatFrom {
-    type Error = steamid_ng::SteamIDParseError;
+    type Error = steamid_ng::SteamIDError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value == "Console" {
             Ok(ChatFrom::Console)
         } else {
-            value.parse().map(ChatFrom::Player)
+            value.as_str().try_into().map(ChatFrom::Player)
         }
     }
 }
