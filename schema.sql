@@ -12,9 +12,10 @@ CREATE TYPE event_type AS ENUM ('charge', 'pointcap', 'medic_death', 'round_win'
 
 CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vaccinator');
 
-CREATE FUNCTION clean_map_name(map TEXT) RETURNS TEXT AS $$
-    SELECT regexp_replace(map, '((_(a|b|beta|u|r|v|rc|final|comptf|ugc|nb)?[0-9]*){1,2}[a-z]?$)|([0-9]+[a-z]?$)', '', 'g');
-$$ LANGUAGE SQL IMMUTABLE;
+CREATE OR REPLACE FUNCTION clean_map_name(map TEXT)
+    RETURNS TEXT AS $$
+SELECT regexp_replace(replace(map, 'workshop/', ''), '((_(a|b|beta|u|r|v|rc|final|comptf|ugc|f)?[0-9]*[a-z]?)?(_(a|b|beta|u|r|v|rc|final|comptf|ugc|f)?[0-9]*[a-z]?(_nb[0-9]*)?)|([0-9]+[a-z]?))(\.[a-z0-9]+)?$', '', 'g');
+$$ LANGUAGE SQL;
 
 CREATE TABLE logs (
     id              INTEGER                     PRIMARY KEY,

@@ -40,12 +40,14 @@ async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), Mai
     let old = get_min_old_stored_log(&pool, VERSION).await?;
     let from = get_max_stored_log(&pool).await?;
 
-    for id in old..=from {
-        info!(id = id, from = OLD_VERSION, to = VERSION, "migrating");
-        if let Some(log) = get_log(&raw_pool, id).await? {
-            upgrade(&pool, id, &log, OLD_VERSION, VERSION).await?;
-        } else {
-            error!(id = id, "invalid");
+    if let Some(old) = old {
+        for id in old..=from {
+            info!(id = id, from = OLD_VERSION, to = VERSION, "migrating");
+            if let Some(log) = get_log(&raw_pool, id).await? {
+                upgrade(&pool, id, &log, OLD_VERSION, VERSION).await?;
+            } else {
+                error!(id = id, "invalid");
+            }
         }
     }
 
@@ -61,15 +63,14 @@ async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), Mai
     Ok(())
 }
 
-async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<i32, MainError> {
+async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<Option<i32>, MainError> {
     Ok(sqlx::query!(
-        r#"SELECT MIN(id) as id from logs WHERE version < $1"#,
+        r#"SELECT MIN(id) as "id" from logs WHERE version < $1"#,
         version
     )
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await?
-    .id
-    .unwrap_or_default())
+    .and_then(|row| row.id))
 }
 
 async fn get_max_stored_log(pool: &PgPool) -> Result<i32, MainError> {
