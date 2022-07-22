@@ -15,7 +15,7 @@ CREATE TYPE medigun AS ENUM ('medigun', 'kritzkrieg', 'quickfix', 'vaccinator');
 CREATE OR REPLACE FUNCTION clean_map_name(map TEXT)
     RETURNS TEXT AS $$
 SELECT regexp_replace(replace(map, 'workshop/', ''), '((_(a|b|beta|u|r|v|rc|final|comptf|ugc|f)?[0-9]*[a-z]?)?(_(a|b|beta|u|r|v|rc|final|comptf|ugc|f)?[0-9]*[a-z]?(_nb[0-9]*)?)|([0-9]+[a-z]?))(\.[a-z0-9]+)?$', '', 'g');
-$$ LANGUAGE SQL;
+$$ LANGUAGE SQL IMMUTABLE;
 
 CREATE TABLE logs (
     id              INTEGER                     PRIMARY KEY,
@@ -28,7 +28,10 @@ CREATE TABLE logs (
     type            map_type                    NOT NULL,
     date            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     winner          team GENERATED ALWAYS AS (CASE WHEN red_score > blue_score THEN 'red'::team WHEN blue_score > red_score THEN 'blue'::team ELSE 'other'::team END) STORED,
-    version         SMALLINT                    NOT NULL
+    version         SMALLINT                    NOT NULL,
+    is_valid        BOOL GENERATED ALWAYS AS (
+            length > 60 AND length < 3600 AND clean_map_name(map) != '' AND game_mode != 'other'
+    ) STORED
 );
 
 CREATE INDEX logs_map_idx
@@ -143,7 +146,7 @@ CREATE TABLE events_round_win (
 CREATE UNIQUE INDEX events_round_win_round_id_idx
     ON events_round_win USING BTREE (round_id);
 
-CREATE FUNCTION team_is_winner(log_id INTEGER, team team) RETURNS BOOL AS $$
+CREATE OR REPLACE FUNCTION team_is_winner(log_id INTEGER, team team) RETURNS BOOL AS $$
 DECLARE
     is_winner BOOLEAN;
 BEGIN
@@ -152,7 +155,7 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
-CREATE FUNCTION get_game_mode(log_id INTEGER) RETURNS game_mode AS $$
+CREATE OR REPLACE FUNCTION get_game_mode(log_id INTEGER) RETURNS game_mode AS $$
 DECLARE
     result game_mode;
 BEGIN
@@ -161,7 +164,7 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
-CREATE FUNCTION get_clean_map(log_id INTEGER) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION get_clean_map(log_id INTEGER) RETURNS TEXT AS $$
 DECLARE
     result TEXT;
 BEGIN
@@ -170,7 +173,7 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
-CREATE FUNCTION get_date(log_id INTEGER) RETURNS TIMESTAMP WITHOUT TIME ZONE AS $$
+CREATE OR REPLACE FUNCTION get_date(log_id INTEGER) RETURNS TIMESTAMP WITHOUT TIME ZONE AS $$
 DECLARE
     result TIMESTAMP WITHOUT TIME ZONE;
 BEGIN
@@ -179,11 +182,20 @@ BEGIN
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
 
-CREATE FUNCTION get_length(log_id INTEGER) RETURNS INTEGER AS $$
+CREATE OR REPLACE FUNCTION get_length(log_id INTEGER) RETURNS INTEGER AS $$
 DECLARE
     result INTEGER;
 BEGIN
     SELECT length into result FROM logs WHERE id = log_id;
+    RETURN result;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION is_log_valid(log_id INTEGER) RETURNS BOOL AS $$
+DECLARE
+    result BOOL;
+BEGIN
+    SELECT is_valid into result FROM logs WHERE id = log_id;
     RETURN result;
 END; $$
     LANGUAGE PLPGSQL IMMUTABLE;
@@ -204,7 +216,7 @@ CREATE TABLE players (
     medigun_ubers   INTEGER                     NOT NULL,
     kritzkrieg_ubers INTEGER                    NOT NULL,
     quickfix_ubers  INTEGER                     NOT NULL,
-    vaccinator_ubers INTEGER                     NOT NULL,
+    vaccinator_ubers INTEGER                    NOT NULL,
     drops           INTEGER                     NOT NULL,
     medkits         INTEGER                     NOT NULL,
     medkits_hp      INTEGER                     NOT NULL,
@@ -234,7 +246,11 @@ CREATE TABLE players (
     game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
     clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
     date            TIMESTAMP WITHOUT TIME ZONE GENERATED ALWAYS AS (get_date(log_id)) STORED,
-    length          INTEGER GENERATED ALWAYS AS (get_length(log_id)) STORED
+    length          INTEGER GENERATED ALWAYS AS (get_length(log_id)) STORED,
+    is_valid        BOOL GENERATED ALWAYS AS (
+        is_log_valid(log_id) AND damage_taken < 100000 AND heals_received < 100000 AND
+        kills < 100 AND deaths < 100 AND get_game_mode(log_id) != 'other'
+    ) STORED
 );
 
 CREATE INDEX players_log_id_idx
@@ -264,15 +280,30 @@ CREATE INDEX players_date_idx
 CREATE INDEX players_year_idx
     ON players USING BTREE (extract(year from date));
 
+CREATE INDEX players_is_valid_idx
+    ON players USING BTREE (is_valid);
+
+CREATE OR REPLACE FUNCTION is_player_valid(player_id BIGINT) RETURNS BOOL AS $$
+DECLARE
+    result BOOL;
+BEGIN
+    SELECT is_valid into result FROM players WHERE id = player_id;
+    RETURN result;
+END; $$
+    LANGUAGE PLPGSQL IMMUTABLE;
+
 CREATE TABLE class_stats (
     id              BIGSERIAL                   PRIMARY KEY,
-    player_id       BIGINT                     NOT NULL REFERENCES players(id),
+    player_id       BIGINT                      NOT NULL REFERENCES players(id),
     type            class_type                  NOT NULL,
     time            INTEGER                     NOT NULL,
     kills           INTEGER                     NOT NULL,
     deaths          INTEGER                     NOT NULL,
     assists         INTEGER                     NOT NULL,
-    dmg             INTEGER                     NOT NULL
+    dmg             INTEGER                     NOT NULL,
+    is_valid        BOOL GENERATED ALWAYS AS (
+        is_player_valid(player_id) AND kills < 100 AND deaths < 100 AND dmg < 50000 AND type != 'unknown' AND time > 0
+    ) STORED
 );
 
 CREATE INDEX class_stats_player_id_idx
@@ -281,9 +312,12 @@ CREATE INDEX class_stats_player_id_idx
 CREATE UNIQUE INDEX class_stats_player_id_type_idx
     ON class_stats USING BTREE (player_id, type);
 
+CREATE INDEX class_stats_player_id_valid_idx
+    ON class_stats USING BTREE (player_id, is_valid);
+
 CREATE TABLE player_weapon_stats (
     id              BIGSERIAL                   PRIMARY KEY,
-    class_stat_id   BIGINT                     NOT NULL REFERENCES class_stats(id),
+    class_stat_id   BIGINT                      NOT NULL REFERENCES class_stats(id),
     weapon          TEXT                        NOT NULL,
     kills           INTEGER                     NOT NULL,
     shots           INTEGER                     NOT NULL,
@@ -314,10 +348,7 @@ CREATE MATERIALIZED VIEW player_stats AS
             steam_id
         FROM players
         INNER JOIN class_stats ON players.id = class_stats.player_id
-        WHERE time < 3600 AND time > 0 AND class_stats.kills < 100 AND game_mode != 'other'
-          AND class_stats.type != 'unknown' AND class_stats.kills < 100
-          AND class_stats.deaths < 100 AND class_stats.dmg < 50000
-          AND clean_map != '' AND damage_taken < 100000 AND heals_received < 100000
+        WHERE class_stats.is_valid
         GROUP BY game_mode, clean_map, extract(year from date)::INT, extract(month from date)::INT,
                  class_stats.type, steam_id;
 
@@ -371,7 +402,12 @@ CREATE TABLE kill_streaks (
     log_id          INTEGER                     NOT NULL REFERENCES logs(id),
     steam_id        BIGINT                      NOT NULL,
     time            INTEGER                     NOT NULL,
-    streak          INTEGER                     NOT NULL
+    streak          INTEGER                     NOT NULL,
+    game_mode       game_mode GENERATED ALWAYS AS (get_game_mode(log_id)) STORED,
+    clean_map       TEXT GENERATED ALWAYS AS (get_clean_map(log_id)) STORED,
+    is_valid        BOOL GENERATED ALWAYS AS (
+        is_log_valid(log_id) AND streak < 20
+    ) STORED
 );
 
 CREATE INDEX kill_streaks_id_idx
@@ -385,3 +421,6 @@ CREATE INDEX kill_streaks_log_id_idx
 
 CREATE INDEX kill_streaks_steam_id_streak_idx
     ON kill_streaks USING BTREE (steam_id, streak);
+
+CREATE INDEX kill_streaks_steam_id_streak_valid_idx
+    ON kill_streaks USING BTREE (steam_id, is_valid, streak);
