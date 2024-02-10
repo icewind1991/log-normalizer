@@ -1,10 +1,11 @@
 use crate::data::{Class, Medigun, TeamId};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnNull};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use steamid_ng::SteamID;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RawLog {
     #[serde(default)]
     pub version: u8,
@@ -28,71 +29,100 @@ pub struct RawLog {
     pub kill_streaks: Option<Vec<KillStreak>>,
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct Teams {
     pub red: Team,
     pub blue: Team,
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[serde_as]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct Team {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub score: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub kills: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub deaths: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub dmg: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub charges: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub drops: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub firstcaps: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub caps: u32,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[serde_as]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Player {
     pub class_stats: Vec<ClassStat>,
     pub team: Option<TeamId>,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub kills: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub deaths: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub assists: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub suicides: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub dmg: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub dmg_real: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub dt: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub dt_real: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub hr: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub lks: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub ubers: u32,
     #[serde(default)]
     pub ubertypes: HashMap<Medigun, u32>,
     pub drops: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub medkits: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub medkits_hp: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub backstabs: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub headshots: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub headshots_hit: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub heal: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub cpc: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub ic: u32,
     pub medicstat: Option<MedicStats>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MedicStats {
     pub advantages_lost: u32,
     pub biggest_advantage_list: u16,
@@ -104,34 +134,47 @@ pub struct MedicStats {
     pub avg_uber_length: f32,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[serde_as]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ClassStat {
     #[serde(rename = "type")]
     pub class: Class,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub kills: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub assists: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub deaths: u16,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub dmg: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub total_time: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     #[serde(default)]
     pub weapon: HashMap<String, WeaponStat>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[serde_as]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum RawWeaponStats {
     Kills(u32),
     Stats {
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         kills: u32,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         dmg: i64,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default)]
         avg_dmg: f32,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         shots: u32,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         hits: u32,
     },
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(from = "RawWeaponStats")]
 pub struct WeaponStat {
     pub kills: u32,
@@ -176,7 +219,7 @@ impl From<RawWeaponStats> for WeaponStat {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Round {
     #[serde(default)]
     pub start_time: u64,
@@ -191,13 +234,16 @@ pub struct Round {
     pub events: Vec<Event>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[serde_as]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RoundPlayer {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub kills: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub dmg: u32,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 pub enum Event {
@@ -246,7 +292,7 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct ClassNumbers {
     #[serde(default)]
     pub scout: u32,
@@ -268,14 +314,14 @@ pub struct ClassNumbers {
     pub spy: u32,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ChatMessage {
     pub steamid: ChatFrom,
     pub name: String,
     pub msg: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 #[serde(try_from = "String")]
 pub enum ChatFrom {
@@ -295,7 +341,7 @@ impl TryFrom<String> for ChatFrom {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Info {
     pub map: String,
     pub total_length: u32,
@@ -340,14 +386,14 @@ pub struct Info {
     pub teams: Option<Teams>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Uploader {
     pub id: SteamID,
     pub name: String,
     pub info: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct KillStreak {
     pub steamid: SteamID,
     pub streak: i32,
@@ -364,14 +410,24 @@ mod tests {
     #[test_case("134389.json")]
     #[test_case("550237.json")]
     #[test_case("2522305.json")]
+    #[test_case("3578739.json")]
     fn test_parse(file: &str) {
         let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
         let parsed: RawLog = serde_json::from_str(&content).unwrap();
         assert!(parsed.teams.is_some() || parsed.info.teams.is_some());
         assert!(parsed.rounds.is_some() || parsed.info.rounds.is_some());
 
-        for round in parsed.rounds.or(parsed.info.rounds).unwrap() {
+        for round in parsed
+            .rounds
+            .as_ref()
+            .or(parsed.info.rounds.as_ref())
+            .unwrap()
+        {
             assert!(round.flat_team.is_some() || round.team.is_some());
         }
+
+        insta::with_settings!({sort_maps => true, snapshot_path => "../tests/data/snapshots"}, {
+            insta::assert_ron_snapshot!(file, parsed);
+        });
     }
 }

@@ -1,6 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq)]
 #[sqlx(type_name = "team")]
 #[sqlx(rename_all = "lowercase")]
 pub enum TeamId {
@@ -16,7 +16,7 @@ impl Default for TeamId {
     }
 }
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 #[sqlx(type_name = "class_type")]
@@ -51,7 +51,7 @@ pub enum GameMode {
     Other,
 }
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq)]
 pub enum EventType {
     Charge,
     PointCap,
@@ -61,7 +61,7 @@ pub enum EventType {
     Other,
 }
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Hash, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum Medigun {

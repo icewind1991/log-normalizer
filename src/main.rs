@@ -1,10 +1,11 @@
 mod data;
 mod database;
 mod normalized;
-mod raw;
+pub mod raw;
 
 use crate::database::{store_log, upgrade};
 use crate::normalized::NormalizedLog;
+use anyhow::{Context, Error};
 use main_error::MainError;
 use sqlx::pool::PoolOptions;
 use sqlx::PgPool;
@@ -26,19 +27,27 @@ async fn main() -> Result<(), MainError> {
     }
 }
 
-async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), MainError> {
+async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), Error> {
     let pool = PoolOptions::new()
         .max_connections(2)
         .connect(database_url)
-        .await?;
+        .await
+        .context("Failed to connect to log database")?;
     let raw_pool = PoolOptions::new()
         .max_connections(2)
         .connect(raw_database_url)
-        .await?;
+        .await
+        .context("Failed to connect to raw log database")?;
 
-    let max = get_max_log(&raw_pool).await?;
-    let old = get_min_old_stored_log(&pool, VERSION).await?;
-    let from = get_max_stored_log(&pool).await?;
+    let max = get_max_log(&raw_pool)
+        .await
+        .context("Failed to get max raw log")?;
+    let old = get_min_old_stored_log(&pool, VERSION)
+        .await
+        .context("Failed to get min processed old log")?;
+    let from = get_max_stored_log(&pool)
+        .await
+        .context("Failed to get min processed log")?;
 
     if let Some(old) = old {
         for id in old..=from {
@@ -63,7 +72,7 @@ async fn normalize(database_url: &str, raw_database_url: &str) -> Result<(), Mai
     Ok(())
 }
 
-async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<Option<i32>, MainError> {
+async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<Option<i32>, Error> {
     Ok(sqlx::query!(
         r#"SELECT MIN(id) as "id" from logs WHERE version < $1"#,
         version
@@ -73,7 +82,7 @@ async fn get_min_old_stored_log(pool: &PgPool, version: i16) -> Result<Option<i3
     .and_then(|row| row.id))
 }
 
-async fn get_max_stored_log(pool: &PgPool) -> Result<i32, MainError> {
+async fn get_max_stored_log(pool: &PgPool) -> Result<i32, Error> {
     Ok(sqlx::query!(r#"SELECT MAX(id) as id from logs"#)
         .fetch_one(pool)
         .await?
@@ -81,7 +90,7 @@ async fn get_max_stored_log(pool: &PgPool) -> Result<i32, MainError> {
         .unwrap_or_default())
 }
 
-async fn get_max_log(pool: &PgPool) -> Result<i32, MainError> {
+async fn get_max_log(pool: &PgPool) -> Result<i32, Error> {
     let row: (i32,) = sqlx::query_as(r#"SELECT MAX(id) as id from logs_raw"#)
         .fetch_one(pool)
         .await?;
@@ -89,12 +98,13 @@ async fn get_max_log(pool: &PgPool) -> Result<i32, MainError> {
 }
 
 #[instrument(skip(pool))]
-async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainError> {
+async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, Error> {
     let row: (serde_json::Value,) =
         sqlx::query_as(r#"SELECT json as id from logs_raw where id = $1"#)
             .bind(id)
             .fetch_one(pool)
-            .await?;
+            .await
+            .context("failed to get raw log")?;
 
     if is_valid(&row.0) {
         match serde_json::from_value(row.0) {
@@ -114,7 +124,7 @@ async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, MainEr
                 if formatted_err.starts_with("invalid type: floating point") {
                     return Ok(None);
                 }
-                Err(err.into())
+                Err(err).context("failed parse raw log")
             }
         }
     } else {

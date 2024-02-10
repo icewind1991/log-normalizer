@@ -1,5 +1,6 @@
 {
   inputs = {
+    nixpkgs.url = "nixpkgs/release-23.11";
     flake-utils.url = "github:numtide/flake-utils";
     naersk.url = "github:nix-community/naersk";
   };
@@ -27,7 +28,7 @@
 
         # `nix develop`
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [rustc cargo bacon cargo-edit cargo-outdated];
+          nativeBuildInputs = with pkgs; [rustc cargo bacon cargo-edit cargo-outdated cargo-insta];
         };
       }
     )
