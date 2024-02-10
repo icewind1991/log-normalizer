@@ -18,8 +18,8 @@ const VERSION: i16 = 2;
 #[tokio::main]
 async fn main() -> Result<(), MainError> {
     tracing_subscriber::fmt::init();
-    let database_url = dotenv::var("DATABASE_URL")?;
-    let raw_database_url = dotenv::var("RAW_DATABASE_URL")?;
+    let database_url = dotenvy::var("DATABASE_URL")?;
+    let raw_database_url = dotenvy::var("RAW_DATABASE_URL")?;
 
     loop {
         normalize(&database_url, &raw_database_url).await?;
