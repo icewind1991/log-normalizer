@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO events_drop(round_id, time, team, steam_id)VALUES($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "team",
+            "kind": {
+              "Enum": [
+                "blue",
+                "red",
+                "other"
+              ]
+            }
+          }
+        },
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "982bc615a035019855317b3b47a3ac10159d81318db323c2d076c9b4c04a4e02"
+}

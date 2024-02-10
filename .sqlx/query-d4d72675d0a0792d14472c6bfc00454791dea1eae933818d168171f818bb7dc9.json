@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO class_stats(player_id, type, time, kills, deaths, assists, dmg)VALUES($1, $2, $3, $4, $5, $6, $7)RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        {
+          "Custom": {
+            "name": "class_type",
+            "kind": {
+              "Enum": [
+                "scout",
+                "soldier",
+                "pyro",
+                "demoman",
+                "heavyweapons",
+                "engineer",
+                "medic",
+                "sniper",
+                "spy",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d4d72675d0a0792d14472c6bfc00454791dea1eae933818d168171f818bb7dc9"
+}

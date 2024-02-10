@@ -1,0 +1,51 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO logs(id, red_score, blue_score, length, game_mode, map, type, date, version)VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "game_mode",
+            "kind": {
+              "Enum": [
+                "ultiduo",
+                "4v4",
+                "6v6",
+                "7v7",
+                "9v9",
+                "other"
+              ]
+            }
+          }
+        },
+        "Text",
+        {
+          "Custom": {
+            "name": "map_type",
+            "kind": {
+              "Enum": [
+                "stopwatch",
+                "cp",
+                "koth",
+                "ctf",
+                "ultiduo",
+                "bball",
+                "other"
+              ]
+            }
+          }
+        },
+        "Timestamp",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "417cfaecb2cb45d16c9da2dc2f8e6d1a37280842a5fc9ffb85b5d1955a54670d"
+}

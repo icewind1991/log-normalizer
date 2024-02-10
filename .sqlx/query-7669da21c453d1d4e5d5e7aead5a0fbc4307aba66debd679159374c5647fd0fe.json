@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO events_medic_death(round_id, time, team, steam_id, killer)VALUES($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "team",
+            "kind": {
+              "Enum": [
+                "blue",
+                "red",
+                "other"
+              ]
+            }
+          }
+        },
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7669da21c453d1d4e5d5e7aead5a0fbc4307aba66debd679159374c5647fd0fe"
+}

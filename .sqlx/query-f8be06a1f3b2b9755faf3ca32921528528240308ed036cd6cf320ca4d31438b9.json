@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO events_point_cap(round_id, time, team, point)VALUES($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "team",
+            "kind": {
+              "Enum": [
+                "blue",
+                "red",
+                "other"
+              ]
+            }
+          }
+        },
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f8be06a1f3b2b9755faf3ca32921528528240308ed036cd6cf320ca4d31438b9"
+}

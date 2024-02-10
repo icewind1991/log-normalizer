@@ -23,7 +23,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
         log.info.date() as DateTime<Utc>,
         2
     )
-    .execute(&mut tx)
+    .execute(&mut *tx)
     .await?;
 
     for (num, round) in log.rounds.iter().enumerate() {
@@ -48,47 +48,49 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
             round.team.red.charges as i32,
             round.team.blue.charges as i32,
         )
-        .fetch_one(&mut tx)
+        .fetch_one(&mut *tx)
         .await?
         .id;
 
         for event in &round.events {
             match event {
-                Event::PointCap { time, team, point } => {
-                    if let Some(team) = team {
-                        sqlx::query!(
-                            "INSERT INTO events_point_cap(round_id, time, team, point)\
-                            VALUES($1, $2, $3, $4)",
-                            round_id,
-                            *time as i32,
-                            *team as TeamId,
-                            *point as i32,
-                        )
-                        .execute(&mut tx)
-                        .await?;
-                    }
+                Event::PointCap {
+                    time,
+                    team: Some(team),
+                    point,
+                } => {
+                    sqlx::query!(
+                        "INSERT INTO events_point_cap(round_id, time, team, point)\
+                        VALUES($1, $2, $3, $4)",
+                        round_id,
+                        *time as i32,
+                        *team as TeamId,
+                        *point as i32,
+                    )
+                    .execute(&mut *tx)
+                    .await?;
                 }
-                Event::RoundWin { time, team } => {
-                    if let Some(team) = team {
-                        sqlx::query!(
-                            "INSERT INTO events_round_win(round_id, time, team)\
-                            VALUES($1, $2, $3)",
-                            round_id,
-                            *time as i32,
-                            team.unwrap_or_default() as TeamId,
-                        )
-                        .execute(&mut tx)
-                        .await?;
-                    }
+                Event::RoundWin {
+                    time,
+                    team: Some(team),
+                } => {
+                    sqlx::query!(
+                        "INSERT INTO events_round_win(round_id, time, team)\
+                        VALUES($1, $2, $3)",
+                        round_id,
+                        *time as i32,
+                        *team as TeamId,
+                    )
+                    .execute(&mut *tx)
+                    .await?;
                 }
                 Event::MedicDeath {
                     time,
-                    team,
+                    team: Some(team),
                     steamid,
                     killer,
                 } => {
-                    if let Some(team) = team {
-                        sqlx::query!(
+                    sqlx::query!(
                         "INSERT INTO events_medic_death(round_id, time, team, steam_id, killer)\
                             VALUES($1, $2, $3, $4, $5)",
                         round_id,
@@ -97,47 +99,42 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                         u64::from(*steamid) as i64,
                         u64::from(*killer) as i64,
                     )
-                        .execute(&mut tx)
-                        .await?;
-                    }
+                    .execute(&mut *tx)
+                    .await?;
                 }
                 Event::Drop {
                     time,
                     steamid,
-                    team,
+                    team: Some(team),
                 } => {
-                    if let Some(team) = team {
-                        sqlx::query!(
-                            "INSERT INTO events_drop(round_id, time, team, steam_id)\
+                    sqlx::query!(
+                        "INSERT INTO events_drop(round_id, time, team, steam_id)\
                             VALUES($1, $2, $3, $4)",
-                            round_id,
-                            *time as i32,
-                            *team as TeamId,
-                            u64::from(*steamid) as i64,
-                        )
-                        .execute(&mut tx)
-                        .await?;
-                    }
+                        round_id,
+                        *time as i32,
+                        *team as TeamId,
+                        u64::from(*steamid) as i64,
+                    )
+                    .execute(&mut *tx)
+                    .await?;
                 }
                 Event::Charge {
                     medigun,
                     time,
                     steamid,
-                    team,
+                    team: Some(team),
                 } => {
-                    if let Some(team) = team {
-                        sqlx::query!(
-                            "INSERT INTO events_charge(round_id, time, team, medigun, steam_id)\
+                    sqlx::query!(
+                        "INSERT INTO events_charge(round_id, time, team, medigun, steam_id)\
                             VALUES($1, $2, $3, $4, $5)",
-                            round_id,
-                            *time as i32,
-                            *team as TeamId,
-                            *medigun as Medigun,
-                            u64::from(*steamid) as i64,
-                        )
-                        .execute(&mut tx)
-                        .await?;
-                    }
+                        round_id,
+                        *time as i32,
+                        *team as TeamId,
+                        *medigun as Medigun,
+                        u64::from(*steamid) as i64,
+                    )
+                    .execute(&mut *tx)
+                    .await?;
                 }
                 _ => {}
             }
@@ -234,7 +231,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                 deaths.sniper as i32,
                 deaths.spy as i32,
             )
-            .fetch_one(&mut tx)
+            .fetch_one(&mut *tx)
             .await?
             .id;
 
@@ -252,7 +249,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                     class.assists as i32,
                     class.dmg as i32,
                 )
-                    .fetch_one(&mut tx)
+                    .fetch_one(&mut *tx)
                     .await?
                     .id;
 
@@ -267,7 +264,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
                             stats.hits as i32,
                             stats.dmg as i32,
                         )
-                            .execute(&mut tx)
+                            .execute(&mut *tx)
                             .await?;
                     }
                 }
@@ -284,7 +281,7 @@ pub async fn store_log(pool: &PgPool, id: i32, log: &NormalizedLog) -> Result<()
             kill_streak.time,
             kill_streak.streak,
         )
-        .execute(&mut tx)
+        .execute(&mut *tx)
         .await?;
     }
 
@@ -313,13 +310,13 @@ pub async fn upgrade(
                 kill_streak.time,
                 kill_streak.streak,
             )
-            .execute(&mut tx)
+            .execute(&mut *tx)
             .await?;
         }
     }
 
     sqlx::query!("UPDATE logs SET version = $1 WHERE id = $2", to, id)
-        .execute(&mut tx)
+        .execute(&mut *tx)
         .await?;
 
     tx.commit().await?;

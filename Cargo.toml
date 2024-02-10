@@ -9,10 +9,10 @@ name = "log-normalizer"
 path = "src/main.rs"
 
 [dependencies]
-sqlx = { version = "0.6.0", default_features = false, features = ["macros", "postgres", "json", "chrono", "runtime-tokio-rustls", "offline"] }
+sqlx = { version = "0.7.3", default_features = false, features = ["macros", "postgres", "json", "chrono", "runtime-tokio-rustls"] }
 dotenv = "0.15.0"
 main_error = "0.1.2"
-tokio = { version = "1.20.0", features = ["macros", "time"] }
+tokio = { version = "1.20.0", features = ["macros", "time", "rt-multi-thread"] }
 serde = { version = "1.0.140", features = ["derive"] }
 serde_with = "3.6.1"
 serde_json = "1.0.82"

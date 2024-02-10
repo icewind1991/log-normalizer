@@ -268,7 +268,7 @@ pub enum Event {
     },
     RoundWin {
         time: u32,
-        team: Option<Option<TeamId>>,
+        team: Option<TeamId>,
     },
     Drop {
         time: u32,

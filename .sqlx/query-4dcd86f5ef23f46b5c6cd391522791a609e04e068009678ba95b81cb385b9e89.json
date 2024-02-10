@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO events_charge(round_id, time, team, medigun, steam_id)VALUES($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "team",
+            "kind": {
+              "Enum": [
+                "blue",
+                "red",
+                "other"
+              ]
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "medigun",
+            "kind": {
+              "Enum": [
+                "medigun",
+                "kritzkrieg",
+                "quickfix",
+                "vaccinator"
+              ]
+            }
+          }
+        },
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4dcd86f5ef23f46b5c6cd391522791a609e04e068009678ba95b81cb385b9e89"
+}

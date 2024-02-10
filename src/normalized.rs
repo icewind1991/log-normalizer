@@ -6,6 +6,7 @@ pub use crate::raw::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use steamid_ng::SteamID;
 
@@ -75,9 +76,9 @@ impl Info {
         } else if self.map.starts_with("cp") {
             MapType::Cp
         } else if self.map.starts_with("koth") {
-            MapType::KOTH
+            MapType::Koth
         } else if self.map.starts_with("ctf") {
-            MapType::CTF
+            MapType::Ctf
         } else if self.map.starts_with("ultiduo") {
             MapType::UltiDuo
         } else if self.map.starts_with("bball") {
@@ -88,7 +89,9 @@ impl Info {
     }
 
     pub fn date(&self) -> DateTime<Utc> {
-        DateTime::from_utc(NaiveDateTime::from_timestamp(self.date as i64, 0), Utc)
+        NaiveDateTime::from_timestamp_opt(self.date as i64, 0)
+            .unwrap()
+            .and_utc()
     }
 }
 
@@ -133,7 +136,7 @@ impl From<RawLog> for NormalizedLog {
             .or(raw.info.rounds)
             .unwrap_or_default()
             .into_iter()
-            .map(|raw| Round::from(raw))
+            .map(Round::from)
             .collect();
         let teams = raw.teams.or(raw.info.teams).unwrap_or_default();
 
@@ -188,33 +191,18 @@ impl From<crate::raw::Round> for Round {
 }
 
 pub fn map_is_stopwatch(map: &str) -> bool {
-    if map.starts_with("pl_") {
-        true
-    } else if map.starts_with("cp_steel") {
-        true
-    } else if map.starts_with("cp_gravelpit") {
-        true
-    } else if map.starts_with("cp_dustbowl") {
-        true
-    } else if map.starts_with("cp_egypt") {
-        true
-    } else if map.starts_with("cp_degrootkeep") {
-        true
-    } else if map.starts_with("cp_gorge") {
-        true
-    } else if map.starts_with("cp_junction") {
-        true
-    } else if map.starts_with("cp_mossrock") {
-        true
-    } else if map.starts_with("cp_manor") {
-        true
-    } else if map.starts_with("cp_snowplow") {
-        true
-    } else if map.starts_with("cp_alloy") {
-        true
-    } else {
-        false
-    }
+    map.starts_with("pl_")
+        || map.starts_with("cp_steel")
+        || map.starts_with("cp_gravelpit")
+        || map.starts_with("cp_dustbowl")
+        || map.starts_with("cp_egypt")
+        || map.starts_with("cp_degrootkeep")
+        || map.starts_with("cp_gorge")
+        || map.starts_with("cp_junction")
+        || map.starts_with("cp_mossrock")
+        || map.starts_with("cp_manor")
+        || map.starts_with("cp_snowplow")
+        || map.starts_with("cp_alloy")
 }
 
 /// Add missing round wins for 2nd round blue win
@@ -273,7 +261,7 @@ fn get_first_event_time(round: &Round) -> u32 {
     round
         .events
         .iter()
-        .filter_map(|event| Some(event.time()))
+        .map(|event| event.time())
         .last()
         .unwrap_or_default()
 }
@@ -327,23 +315,27 @@ fn normalize_stopwatch_score(log: &mut NormalizedLog) {
         let second_half_capped = get_round_point_capped(&log.rounds[1]);
 
         // "blue" is the team that attacked first
-        if first_half_capped > second_half_capped {
-            log.teams.blue.score = 1;
-            log.teams.red.score = 0;
-        } else if second_half_capped > first_half_capped {
-            log.teams.blue.score = 0;
-            log.teams.red.score = 1;
-        } else {
-            let first_half_cap_time = get_last_cap_time(&log.rounds[0]);
-            let second_half_cap_time = get_last_cap_time(&log.rounds[1])
-                .saturating_sub(get_round_end_time(&log.rounds[0]));
-
-            if first_half_cap_time < second_half_cap_time {
+        match first_half_capped.cmp(&second_half_capped) {
+            Ordering::Greater => {
                 log.teams.blue.score = 1;
                 log.teams.red.score = 0;
-            } else {
+            }
+            Ordering::Less => {
                 log.teams.blue.score = 0;
                 log.teams.red.score = 1;
+            }
+            Ordering::Equal => {
+                let first_half_cap_time = get_last_cap_time(&log.rounds[0]);
+                let second_half_cap_time = get_last_cap_time(&log.rounds[1])
+                    .saturating_sub(get_round_end_time(&log.rounds[0]));
+
+                if first_half_cap_time < second_half_cap_time {
+                    log.teams.blue.score = 1;
+                    log.teams.red.score = 0;
+                } else {
+                    log.teams.blue.score = 0;
+                    log.teams.red.score = 1;
+                }
             }
         }
     }

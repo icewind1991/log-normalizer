@@ -4,7 +4,7 @@
   lib,
 }: let
   inherit (lib.sources) sourceByRegex;
-  src = sourceByRegex ./. ["Cargo.*" "(src|tests|sqlx-data.json)(/.*)?"];
+  src = sourceByRegex ./. ["Cargo.*" "(src|tests|.sqlx)(/.*)?"];
 in
   rustPlatform.buildRustPackage rec {
     pname = "log-normalizer";

@@ -747,7 +747,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 116,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
@@ -866,7 +866,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 267,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
@@ -986,7 +986,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 366,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
@@ -1166,7 +1166,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 645,
-          team: Some(Some(Red)),
+          team: Some(Red),
         ),
       ],
       "firstcap": Some(Blue),
@@ -1279,7 +1279,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 779,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
@@ -1411,7 +1411,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 1003,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),

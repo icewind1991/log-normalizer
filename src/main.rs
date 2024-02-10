@@ -136,7 +136,7 @@ fn is_valid(value: &serde_json::Value) -> bool {
     if value.get("success").is_none() {
         return false;
     }
-    if value.get("success").unwrap().as_bool().unwrap_or_default() == false {
+    if !value.get("success").unwrap().as_bool().unwrap_or_default() {
         return false;
     }
 

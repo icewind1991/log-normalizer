@@ -1,19 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq, Default)]
 #[sqlx(type_name = "team")]
 #[sqlx(rename_all = "lowercase")]
 pub enum TeamId {
     Blue,
     Red,
     #[serde(other)]
+    #[default]
     Other,
-}
-
-impl Default for TeamId {
-    fn default() -> Self {
-        TeamId::Other
-    }
 }
 
 #[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Eq, PartialEq)]
@@ -61,7 +56,7 @@ pub enum EventType {
     Other,
 }
 
-#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Deserialize, Serialize, Hash, Eq, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum Medigun {
@@ -69,30 +64,20 @@ pub enum Medigun {
     QuickFix,
     Vaccinator,
     #[serde(other)]
+    #[default]
     Medigun,
 }
 
-impl Default for Medigun {
-    fn default() -> Self {
-        Medigun::Medigun
-    }
-}
-
-#[derive(Debug, Clone, Copy, sqlx::Type, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, sqlx::Type, Eq, PartialEq, Default)]
 #[sqlx(rename_all = "lowercase")]
 #[sqlx(type_name = "map_type")]
 pub enum MapType {
     Stopwatch,
     Cp,
-    KOTH,
-    CTF,
+    Koth,
+    Ctf,
     UltiDuo,
     BBall,
+    #[default]
     Other,
-}
-
-impl Default for MapType {
-    fn default() -> Self {
-        MapType::Other
-    }
 }

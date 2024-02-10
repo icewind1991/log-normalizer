@@ -32,6 +32,7 @@
             cargo-edit
             cargo-outdated
             cargo-insta
+            sqlx-cli
           ];
         };
       }

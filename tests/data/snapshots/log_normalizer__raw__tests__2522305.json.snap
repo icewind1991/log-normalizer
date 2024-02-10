@@ -1352,7 +1352,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 959,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
@@ -1570,7 +1570,7 @@ RawLog(
         Event(
           type: "round_win",
           time: 1299,
-          team: Some(Some(Blue)),
+          team: Some(Blue),
         ),
       ],
       "firstcap": Some(Blue),
