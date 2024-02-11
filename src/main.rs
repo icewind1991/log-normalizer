@@ -134,9 +134,11 @@ async fn get_log(pool: &PgPool, id: i32) -> Result<Option<NormalizedLog>, Error>
 
 fn is_valid(value: &serde_json::Value) -> bool {
     if value.get("success").is_none() {
+        info!("missing 'success'");
         return false;
     }
     if !value.get("success").unwrap().as_bool().unwrap_or_default() {
+        info!("'success' is false");
         return false;
     }
 
@@ -145,8 +147,9 @@ fn is_valid(value: &serde_json::Value) -> bool {
         .or_else(|| value.get("info").map(|info| info.get("rounds")).unwrap())
         .unwrap();
 
-    for round in rounds.as_array().unwrap() {
+    for (index, round) in rounds.as_array().unwrap().iter().enumerate() {
         if round.get("length").unwrap().as_i64().unwrap() < 0 {
+            info!(round = index, "round has invalid length");
             return false;
         }
     }
