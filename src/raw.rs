@@ -2,6 +2,7 @@ use crate::data::{Class, Medigun, TeamId};
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use steamid_ng::SteamID;
@@ -450,8 +451,8 @@ impl<'de> Deserialize<'de> for MaybeSteamId {
     where
         D: Deserializer<'de>,
     {
-        let raw = <&str as Deserialize>::deserialize(deserializer)?;
-        match raw {
+        let raw = <Cow<str> as Deserialize>::deserialize(deserializer)?;
+        match raw.as_ref() {
             "BOT" => Ok(MaybeSteamId::Bot),
             raw => SteamID::try_from(raw)
                 .map_err(D::Error::custom)
