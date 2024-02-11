@@ -1,5 +1,6 @@
 use crate::data::{Class, Medigun, TeamId};
-use serde::{Deserialize, Serialize};
+use serde::de::Error;
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
@@ -12,16 +13,23 @@ pub struct RawLog {
     #[serde(default)]
     pub length: u32,
     pub teams: Option<Teams>,
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub players: HashMap<SteamID, Player>,
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub names: HashMap<SteamID, String>,
     pub rounds: Option<Vec<Round>>,
     #[serde(rename = "healspread")]
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub heal_spread: HashMap<SteamID, HashMap<SteamID, u32>>,
     #[serde(rename = "classkills")]
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub class_kills: HashMap<SteamID, ClassNumbers>,
     #[serde(rename = "classdeaths")]
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub class_deaths: HashMap<SteamID, ClassNumbers>,
     #[serde(rename = "classkillassists")]
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map_opt")]
     pub class_kill_assists: Option<HashMap<SteamID, ClassNumbers>>,
     pub chat: Vec<ChatMessage>,
     pub info: Info,
@@ -230,6 +238,7 @@ pub struct Round {
     pub team: Option<Teams>,
     #[serde(flatten)]
     pub flat_team: Option<Teams>,
+    #[serde(deserialize_with = "deserialize_steam_id_bot_map")]
     pub players: HashMap<SteamID, RoundPlayer>,
     pub events: Vec<Event>,
 }
@@ -400,6 +409,57 @@ pub struct KillStreak {
     pub time: i32,
 }
 
+#[derive(Debug, Eq, PartialEq, Hash)]
+enum MaybeSteamId {
+    Bot,
+    SteamId(SteamID),
+}
+
+impl MaybeSteamId {
+    fn steam_id(&self) -> Option<SteamID> {
+        match self {
+            MaybeSteamId::Bot => None,
+            MaybeSteamId::SteamId(id) => Some(*id),
+        }
+    }
+}
+
+fn deserialize_steam_id_bot_map<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    deserializer: D,
+) -> Result<HashMap<SteamID, T>, D::Error> {
+    let map = <HashMap<MaybeSteamId, T>>::deserialize(deserializer)?;
+    Ok(map
+        .into_iter()
+        .filter_map(|(k, v)| Some((k.steam_id()?, v)))
+        .collect())
+}
+
+fn deserialize_steam_id_bot_map_opt<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    deserializer: D,
+) -> Result<Option<HashMap<SteamID, T>>, D::Error> {
+    let opt = <Option<HashMap<MaybeSteamId, T>>>::deserialize(deserializer)?;
+    Ok(opt.map(|map| {
+        map.into_iter()
+            .filter_map(|(k, v)| Some((k.steam_id()?, v)))
+            .collect()
+    }))
+}
+
+impl<'de> Deserialize<'de> for MaybeSteamId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw = <&str as Deserialize>::deserialize(deserializer)?;
+        match raw {
+            "BOT" => Ok(MaybeSteamId::Bot),
+            raw => SteamID::try_from(raw)
+                .map_err(D::Error::custom)
+                .map(MaybeSteamId::SteamId),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,6 +471,7 @@ mod tests {
     #[test_case("550237.json")]
     #[test_case("2522305.json")]
     #[test_case("3578739.json")]
+    #[test_case("3579548.json")]
     fn test_parse(file: &str) {
         let content = fs::read_to_string(format!("tests/data/{}", file)).unwrap();
         let parsed: RawLog = serde_json::from_str(&content).unwrap();
